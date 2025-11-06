@@ -45,13 +45,11 @@
 /* fallback fonts */
 @font-face {
   font-family: lato-fallback;
-  size-adjust: 88.82%;
   src: local('Arial');
 }
 
 @font-face {
   font-family: merriweather-sans-fallback;
-  size-adjust: 99.529%;
   src: local('Arial');
 }
 

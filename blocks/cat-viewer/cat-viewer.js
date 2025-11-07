@@ -248,18 +248,20 @@ async function initialize(block, workerUrl, controls, imageContainer, dialog) {
     }
   }
 
-  // Load breeds
-  try {
-    breeds = await fetchBreeds(workerUrl);
-    populateBreedSelect(breedSelect, breeds);
-  } catch (error) {
-    breedSelect.innerHTML = '<option value="">Failed to load breeds</option>';
-    // eslint-disable-next-line no-console
-    console.error('Failed to load breeds:', error);
-  }
-
-  // Load initial random cat
+  // Load initial random cat first (for faster LCP)
   await loadRandomCat();
+
+  // Load breeds asynchronously (doesn't block image display)
+  fetchBreeds(workerUrl)
+    .then((fetchedBreeds) => {
+      breeds = fetchedBreeds;
+      populateBreedSelect(breedSelect, breeds);
+    })
+    .catch((error) => {
+      breedSelect.innerHTML = '<option value="">Failed to load breeds</option>';
+      // eslint-disable-next-line no-console
+      console.error('Failed to load breeds:', error);
+    });
 
   // Event listeners
   breedSelect.addEventListener('change', async () => {

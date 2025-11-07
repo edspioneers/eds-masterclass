@@ -65,8 +65,13 @@ function createImageContainer() {
   loader.className = 'cat-viewer-loader';
   loader.textContent = 'Loading...';
 
+  const attribution = document.createElement('div');
+  attribution.className = 'cat-viewer-attribution';
+  attribution.innerHTML = 'Powered by <a href="https://thecatapi.com/" target="_blank" rel="noopener">The Cat API</a>';
+
   container.appendChild(loader);
   container.appendChild(img);
+  container.appendChild(attribution);
 
   return container;
 }

@@ -7,25 +7,27 @@ This document contains useful resources for AEM Edge Delivery Services developme
 - https://www.aem.live/docs/dev-collab-and-good-practices
 - https://www.aem.live/developer/keeping-it-100
 
-## Content Modeling
+### Content Modeling
 
 - https://www.aem.live/blog/content-document-semantics
 - https://www.aem.live/developer/component-model-definitions
 - https://www.aem.live/developer/markup-sections-blocks
 - https://www.aem.live/docs/davidsmodel
 
-## Development Process & Tools
+### Development Process & Tools
 
 - https://www.aem.live/blog/testing-in-aem
 - https://www.aem.live/developer/ai-coding-agents
 - [Helix Website Repo](https://github.com/adobe/helix-website)
 
-## Community
+### Community
 
 - https://www.aem.live/developer/block-collection
 - https://www.aem.live/developer/block-party/
 - https://www.aem.live/community
 - https://www.aem.live/blog
+
+---
 
 ## Integrations
 

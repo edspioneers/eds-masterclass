@@ -29,28 +29,6 @@ This document contains useful resources for AEM Edge Delivery Services developme
 
 ---
 
-## Integrations
-
-- [Integration Overview](https://www.aem.live/docs/integrations)
-- [Integration Patterns](https://www.aem.live/developer/integrations)
-- [Github Actions](https://www.aem.live/developer/github-actions)
-- [BYOM](https://www.aem.live/developer/byom)
-- [Adobe Experience Cloud](https://www.aem.live/developer/martech-integration)
-- [Adobe Target](https://www.aem.live/developer/target-integration)
-- [Google Tag Manager](https://www.aem.live/developer/gtm-martech-integration)
-- [Forms](https://www.aem.live/developer/forms)
-
-
-### Workers
-
-- [Cloudflare Workers](https://developers.cloudflare.com/workers/)
-- [Fastly Edge Compute](https://www.fastly.com/documentation/solutions/examples/javascript/)
-- [AWS Lambda@Edge](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-examples.html)
-- [Akamai EdgeWorkers](https://techdocs.akamai.com/edgeworkers/docs/hello-world)
-- [The Cat API](https://thecatapi.com/)
-
-
----
 
 ## Web Performance
 
@@ -98,3 +76,26 @@ javascript:(function(){window.open('//treo.sh/sitespeed/' + window.location.orig
 ```javascript
 javascript:(function(){window.open('//cruxvis.withgoogle.com/#/?view=cwvsummary&url='+window.location+'&identifier=url&device=PHONE&periodStart=0&periodEnd=-1&display=p75s');})()
 ```
+
+---
+
+## Integrations
+
+- [Integration Overview](https://www.aem.live/docs/integrations)
+- [Integration Patterns](https://www.aem.live/developer/integrations)
+- [Github Actions](https://www.aem.live/developer/github-actions)
+- [BYOM](https://www.aem.live/developer/byom)
+- [Adobe Experience Cloud](https://www.aem.live/developer/martech-integration)
+- [Adobe Target](https://www.aem.live/developer/target-integration)
+- [Google Tag Manager](https://www.aem.live/developer/gtm-martech-integration)
+- [Forms](https://www.aem.live/developer/forms)
+
+
+### Workers
+
+- [Cloudflare Workers](https://developers.cloudflare.com/workers/)
+- [Fastly Edge Compute](https://www.fastly.com/documentation/solutions/examples/javascript/)
+- [AWS Lambda@Edge](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-examples.html)
+- [Akamai EdgeWorkers](https://techdocs.akamai.com/edgeworkers/docs/hello-world)
+- [The Cat API](https://thecatapi.com/)
+

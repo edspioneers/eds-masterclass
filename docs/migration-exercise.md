@@ -150,5 +150,10 @@ curl -X POST https://admin.hlx.page/config/{org}/sites/{site}/headers.json \
 - Add a redirect for `/news` to redirect to `/blog`
 - Test the redirect on the site
 
+## Step 9: Create a basic DA plugin
+- Review the `/tools/button-creator` plugin.
+- Create a sheet under your site's config called `library`
+- Add the following config
+
 _Note: These paths should be relative and not the FQDN_
 

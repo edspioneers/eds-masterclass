@@ -15,7 +15,9 @@ IMPORTANT: Before going through the following steps, fork this `eds-masterclass`
 - Visit https://github.com/apps/aem-code-sync
 - Hit `Configure`
 - Select `Only Select Repositories` and give your new forked repo access to the code sync app
-.
+
+## Get an Admin API auth token
+We'll be using curl in some of the following steps to update configurations. Login to the Admin API here, and grab the key from the browser's cookies once authenticated: https://admin.hlx.page/login
 
 ## References:
 
@@ -82,8 +84,7 @@ curl -X PUT https://admin.hlx.page/config/{org}/sites/{site}/content/query.yaml 
 ```
 
 - Then, go to https://labs.aem.live/tools/index-admin/index.html to review your index config.
-- Add a second index called `blog` using the index admin tool.
-    - Value for `include` should be `/blog/**`  
+- Value for `include` should be `/blog/**`
 
 ## Step 4: Create sitemaps pointing to their indices
 - Go to https://labs.aem.live/tools/sitemap-admin/index.html
@@ -150,4 +151,12 @@ curl -X POST https://admin.hlx.page/config/{org}/sites/{site}/headers.json \
 - Test the redirect on the site
 
 _Note: These paths should be relative and not the FQDN_
+
+## Step 9: Create a basic DA plugin
+- Review the `/tools/button-creator` plugin.
+- Create a sheet under your site's config called `library`
+- Add the following config
+
+<img width="573" height="156" alt="image" src="https://github.com/user-attachments/assets/2398c9b9-c09e-423b-aba7-7aa8cadfd247" />
+
 

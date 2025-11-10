@@ -15,7 +15,9 @@ IMPORTANT: Before going through the following steps, fork this `eds-masterclass`
 - Visit https://github.com/apps/aem-code-sync
 - Hit `Configure`
 - Select `Only Select Repositories` and give your new forked repo access to the code sync app
-.
+
+## Get an Admin API auth token
+We'll be using curl in some of the following steps to update configurations. Login to the Admin API here, and grab the key from the browser's cookies once authenticated: https://admin.hlx.page/login
 
 ## References:
 

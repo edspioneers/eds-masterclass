@@ -1,0 +1,269 @@
+<html><head></head><main tabindex="-1" id="main"><div class="mx-auto px-4 pb-16 pt-8 md:pt-16 max-w-screen-md"><article class=""><div class=""><h1 class="blog-header text-4xl font-bold text-gray-800 sm:text-6xl col-span-7">Deno's Other Open Source Projects</h1></div><div class="markdown-body pb-16"><p>Deno’s codebase - and most of what we build around it - is open source under the
+permissive MIT license. Over the years, we’ve published dozens of supporting
+libraries and tools that solve common problems we’ve run into while building
+Deno. Here are a few we think others may find useful.</p>
+<ul>
+<li><a href="#rusty_v8"><code>rusty_v8</code>: Rust bindings to the V8 JavaScript engine</a></li>
+<li><a href="#deno_core"><code>deno_core</code>: builds on <code>rusty_v8</code> to provide higher level functionality, like mapping JavaScript <code>Promises</code> to Rust <code>Futures</code></a></li>
+<li><a href="#rust-urlpattern"><code>rust-urlpattern</code>: implements <code>URLPattern</code> web API in Rust</a></li>
+<li><a href="#import_map"><code>import_map</code>: implements the import map spec in Rust</a></li>
+<li><a href="#eszip-and-eszip_viewer"><code>eszip</code> and <code>eszip_viewer</code>: a binary file format for distributing an entire module graph of TypeScript files</a></li>
+<li><a href="#sui"><code>sui</code>: a library for embedding data executable files in a cross platform way</a></li>
+<li><a href="#dnt"><code>dnt</code>: Deno to npm package build tool</a></li>
+<li><a href="#wasmbuild"><code>wasmbuild</code>: Build tool to use Rust code in Deno and the browser</a></li>
+<li><a href="#monch"><code>monch</code>: lightweight parser, similar to <code>nom</code>, focused on strings</a></li>
+<li><a href="#deno_task_shell"><code>deno_task_shell</code>: cross-platform shell for <code>deno task</code>.</a></li>
+<li><a href="#flaky_test"><code>flaky_test</code>: atttribute macro for running a flaky test multiple times</a></li>
+<li><a href="#vnotify"><code>vnotify</code>: monitor millions of S3 objects without external dependencies</a></li>
+<li><a href="#whats-next">What’s next</a></li>
+</ul>
+<h2 id="rusty-v8">Rusty V8</h2>
+<p><a href="https://github.com/denoland/rusty_v8" rel="noopener noreferrer"><strong>Rusty V8</strong></a> provides high-quality,
+zero-overhead Rust bindings to V8’s C++ API, and is the core of the Deno
+runtime. We made this library, which has undergone over 150 releases and
+downloaded more than 3 million times on crates.io,
+<a href="/blog/rusty-v8-stabilized" rel="noopener noreferrer">stable and production ready last year</a>.
+You can use Rusty V8 to build custom JavaScript runtimes, run WebAssembly
+modules, use the V8 Fast API, and much more.</p>
+<p>Here’s an example of how you can embed JavaScript in a Rust program with
+<code>rusty_v8</code>:</p>
+<div class="highlight highlight-source-jsx notranslate"><pre>fn <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token comment">// Initialize V8.</span>
+  <span class="token keyword">let</span> platform <span class="token operator">=</span> v8<span class="token operator">:</span><span class="token operator">:</span><span class="token function">new_default_platform</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token method function property-access">make_shared</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token literal-property property">v8</span><span class="token operator">:</span><span class="token operator">:</span><span class="token constant">V8</span><span class="token operator">:</span><span class="token operator">:</span><span class="token function">initialize_platform</span><span class="token punctuation">(</span>platform<span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token literal-property property">v8</span><span class="token operator">:</span><span class="token operator">:</span><span class="token constant">V8</span><span class="token operator">:</span><span class="token operator">:</span><span class="token function">initialize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// Create a new Isolate and make it the current one.</span>
+  <span class="token keyword">let</span> isolate <span class="token operator">=</span> <span class="token operator">&amp;</span>mut v8<span class="token operator">:</span><span class="token operator">:</span><span class="token maybe-class-name">Isolate</span><span class="token operator">:</span><span class="token operator">:</span><span class="token keyword">new</span><span class="token punctuation">(</span>v8<span class="token operator">:</span><span class="token operator">:</span><span class="token maybe-class-name">CreateParams</span><span class="token operator">:</span><span class="token operator">:</span><span class="token keyword module">default</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// Create a stack-allocated handle scope.</span>
+  <span class="token keyword">let</span> handle_scope <span class="token operator">=</span> <span class="token operator">&amp;</span>mut v8<span class="token operator">:</span><span class="token operator">:</span><span class="token maybe-class-name">HandleScope</span><span class="token operator">:</span><span class="token operator">:</span><span class="token keyword">new</span><span class="token punctuation">(</span>isolate<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// Create a new context.</span>
+  <span class="token keyword">let</span> context <span class="token operator">=</span> v8<span class="token operator">:</span><span class="token operator">:</span><span class="token maybe-class-name">Context</span><span class="token operator">:</span><span class="token operator">:</span><span class="token keyword">new</span><span class="token punctuation">(</span>handle_scope<span class="token punctuation">,</span> <span class="token literal-property property">Default</span><span class="token operator">:</span><span class="token operator">:</span><span class="token keyword module">default</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// Enter the context for compiling and running the hello world script.</span>
+  <span class="token keyword">let</span> scope <span class="token operator">=</span> <span class="token operator">&amp;</span>mut v8<span class="token operator">:</span><span class="token operator">:</span><span class="token maybe-class-name">ContextScope</span><span class="token operator">:</span><span class="token operator">:</span><span class="token keyword">new</span><span class="token punctuation">(</span>handle_scope<span class="token punctuation">,</span> context<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// Create a string containing the JavaScript source code.</span>
+  <span class="token keyword">let</span> code <span class="token operator">=</span> v8<span class="token operator">:</span><span class="token operator">:</span><span class="token known-class-name class-name">String</span><span class="token operator">:</span><span class="token operator">:</span><span class="token keyword">new</span><span class="token punctuation">(</span>scope<span class="token punctuation">,</span> <span class="token string">"'Hello' + ' World!'"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token method function property-access">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// Compile the source code.</span>
+  <span class="token keyword">let</span> script <span class="token operator">=</span> v8<span class="token operator">:</span><span class="token operator">:</span><span class="token maybe-class-name">Script</span><span class="token operator">:</span><span class="token operator">:</span><span class="token function">compile</span><span class="token punctuation">(</span>scope<span class="token punctuation">,</span> code<span class="token punctuation">,</span> <span class="token maybe-class-name">None</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token method function property-access">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// Run the script to get the result.</span>
+  <span class="token keyword">let</span> result <span class="token operator">=</span> script<span class="token punctuation">.</span><span class="token method function property-access">run</span><span class="token punctuation">(</span>scope<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token method function property-access">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// Convert the result to a string and print it.</span>
+  <span class="token keyword">let</span> result <span class="token operator">=</span> result<span class="token punctuation">.</span><span class="token method function property-access">to_string</span><span class="token punctuation">(</span>scope<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token method function property-access">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  println<span class="token operator">!</span><span class="token punctuation">(</span><span class="token string">"{}"</span><span class="token punctuation">,</span> result<span class="token punctuation">.</span><span class="token method function property-access">to_rust_string_lossy</span><span class="token punctuation">(</span>scope<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></pre></div><h2 id="deno_core">deno_core</h2>
+<p>The <a href="https://github.com/denoland/deno_core" rel="noopener noreferrer"><code>deno_core</code></a> crate, builds on Rusty
+V8. Where Rusty V8 is truly exposes V8’s C++ API as directly as possible in
+Rust, <code>deno_core</code> adds “ops” and an event loop. Practically it maps JavaScript
+Promises onto Rust Futures. The “ops” are marcos which allow users to define
+functions that cross the boundary between JavaScript and Rust as efficently as
+possible (using V8’s Fast API where possible).</p>
+<p>We’ve written some
+<a href="/blog/roll-your-own-javascript-runtime" rel="noopener noreferrer">blog posts</a> about how
+one can use <code>deno_core</code> to quickly roll your own JavaScript runtime.</p>
+<p>Although <code>deno_core</code> adds a lot on top of Rusty V8, it still lacks many things
+from the main deno runtime - it has no concept of TypeScript, it has very few
+APIs - no <code>fetch()</code> - and certainly no built-in node modules.</p>
+<h2 id="rust-urlpattern">rust-urlpattern</h2>
+<p><a href="https://github.com/denoland/rust-urlpattern" rel="noopener noreferrer">This crate</a> implements the
+<code>URLPattern</code> web API in Rust, following the specification as closely as
+possible. We use this …</p>
+<div class="highlight highlight-source-rust notranslate"><pre><span class="token keyword">use</span> <span class="token namespace">urlpattern<span class="token punctuation">::</span></span><span class="token class-name">UrlPattern</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token namespace">urlpattern<span class="token punctuation">::</span></span><span class="token class-name">UrlPatternInput</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token namespace">urlpattern<span class="token punctuation">::</span></span><span class="token class-name">UrlPatternInit</span><span class="token punctuation">;</span>
+
+<span class="token keyword">use</span> <span class="token namespace">urlpattern<span class="token punctuation">::</span></span><span class="token class-name">UrlPattern</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token namespace">urlpattern<span class="token punctuation">::</span></span><span class="token class-name">UrlPatternInit</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token namespace">urlpattern<span class="token punctuation">::</span></span><span class="token class-name">UrlPatternMatchInput</span><span class="token punctuation">;</span>
+
+<span class="token keyword">fn</span> <span class="token function-definition function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token comment">// Create the UrlPattern to match against.</span>
+  <span class="token keyword">let</span> init <span class="token operator">=</span> <span class="token class-name">UrlPatternInit</span> <span class="token punctuation">{</span>
+    pathname<span class="token punctuation">:</span> <span class="token class-name">Some</span><span class="token punctuation">(</span><span class="token string">"/users/:id"</span><span class="token punctuation">.</span><span class="token function">to_owned</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">..</span><span class="token class-name">Default</span><span class="token punctuation">::</span><span class="token function">default</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+  <span class="token punctuation">}</span><span class="token punctuation">;</span>
+  <span class="token keyword">let</span> pattern <span class="token operator">=</span> <span class="token operator">&lt;</span><span class="token class-name">UrlPattern</span><span class="token operator">&gt;</span><span class="token punctuation">::</span><span class="token function">parse</span><span class="token punctuation">(</span>init<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token comment">// Match the pattern against a URL.</span>
+  <span class="token keyword">let</span> url <span class="token operator">=</span> <span class="token string">"https://example.com/users/123"</span><span class="token punctuation">.</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">let</span> result <span class="token operator">=</span> pattern<span class="token punctuation">.</span><span class="token function">exec</span><span class="token punctuation">(</span><span class="token class-name">UrlPatternMatchInput</span><span class="token punctuation">::</span><span class="token class-name">Url</span><span class="token punctuation">(</span>url<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token macro property">assert_eq!</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>pathname<span class="token punctuation">.</span>groups<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token string">"id"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"123"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></pre></div><h2 id="import_map">import_map</h2>
+<p><a href="https://github.com/denoland/import_map" rel="noopener noreferrer"><code>import_map</code></a> is a Rust crate
+implementing the WICG Import Maps specification. An import map is a JSON file
+that lets you control how module specifiers resolve to actual URLs in JavaScript
+and TypeScript. We use this library to parse and apply import maps.</p>
+<p>You can use <code>import_map</code> to create and map custom specifiers like <code>"my-lib"</code> to
+a full URL:</p>
+<div class="highlight highlight-source-rust notranslate"><pre><span class="token keyword">use</span> <span class="token namespace">import_map<span class="token punctuation">::</span></span><span class="token class-name">ImportMap</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token namespace">url<span class="token punctuation">::</span></span><span class="token class-name">Url</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Define a base URL for relative mappings.</span>
+<span class="token keyword">let</span> base_url <span class="token operator">=</span> <span class="token class-name">Url</span><span class="token punctuation">::</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token string">"file:///project/"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// Create a new import map with a simple mapping:</span>
+<span class="token keyword">let</span> <span class="token keyword">mut</span> import_map <span class="token operator">=</span> <span class="token class-name">ImportMap</span><span class="token punctuation">::</span><span class="token function">new</span><span class="token punctuation">(</span>base_url<span class="token punctuation">)</span><span class="token punctuation">;</span>
+import_map<span class="token punctuation">.</span><span class="token function">imports_mut</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">insert</span><span class="token punctuation">(</span>
+    <span class="token string">"my-lib"</span><span class="token punctuation">.</span><span class="token function">to_string</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token class-name">Url</span><span class="token punctuation">::</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token string">"https://cdn.example.com/my-lib@1.0/mod.js"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Resolve a specifier using the import map.</span>
+<span class="token keyword">let</span> specifier <span class="token operator">=</span> <span class="token string">"my-lib"</span><span class="token punctuation">;</span>
+<span class="token keyword">let</span> resolved_url <span class="token operator">=</span> import_map<span class="token punctuation">.</span><span class="token function">resolve</span><span class="token punctuation">(</span>specifier<span class="token punctuation">,</span> <span class="token operator">&amp;</span>base_url<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">unwrap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token macro property">println!</span><span class="token punctuation">(</span><span class="token string">"'{}' resolves to {}"</span><span class="token punctuation">,</span> specifier<span class="token punctuation">,</span> resolved_url<span class="token punctuation">)</span><span class="token punctuation">;</span></pre></div><h2 id="eszip-and-eszip_viewer">eszip and eszip_viewer</h2>
+<p>The <a href="https://github.com/denoland/eszip" rel="noopener noreferrer"><code>eszip</code></a> format lets you losslessly
+serialize an ECMAScript module graph into a single compact file, allowing
+efficient storage and transmission of code as a single package. This is useful
+for creating standalone archives of JavaScript or TypeScript projects, or
+caching module graphs. It also supports streaming, so large module bundles can
+be loaded efficiently.</p>
+<div class="highlight highlight-source-rust notranslate"><pre># <span class="token class-name">Bundle</span> a <span class="token class-name">Deno</span> <span class="token function">module</span> <span class="token punctuation">(</span>and its dependencies<span class="token punctuation">)</span> into an eszip file<span class="token punctuation">:</span>
+$ cargo run <span class="token operator">-</span><span class="token operator">-</span>example eszip_builder https<span class="token punctuation">:</span><span class="token operator">/</span><span class="token operator">/</span>deno<span class="token punctuation">.</span>land<span class="token operator">/</span>std<span class="token operator">/</span>http<span class="token operator">/</span>file_server<span class="token punctuation">.</span>ts file_server<span class="token punctuation">.</span>eszip
+
+# <span class="token class-name">Later</span><span class="token punctuation">,</span> view the contents of that eszip archive<span class="token punctuation">:</span>
+$ cargo run <span class="token operator">-</span><span class="token operator">-</span>example eszip_viewer file_server<span class="token punctuation">.</span>eszip
+
+# <span class="token class-name">You</span> can even execute the bundle by loading it into a <span class="token constant">V8</span> <span class="token function">runtime</span> <span class="token punctuation">(</span>using an eszip loader<span class="token punctuation">)</span><span class="token punctuation">.</span>
+$ cargo run <span class="token operator">-</span><span class="token operator">-</span>example eszip_load file_server<span class="token punctuation">.</span>eszip https<span class="token punctuation">:</span><span class="token operator">/</span><span class="token operator">/</span>deno<span class="token punctuation">.</span>land<span class="token operator">/</span>std<span class="token operator">/</span>http<span class="token operator">/</span>file_server<span class="token punctuation">.</span>ts</pre></div><p>We use <code>eszip</code> for quickly loading JavaScript and TypeScript in Deno Deploy. We
+also have <a href="https://github.com/denoland/eszip_viewer" rel="noopener noreferrer"><code>eszip_viewer</code></a> to easily
+view <code>eszip</code> formats.</p>
+<h2 id="sui">sui</h2>
+<p><a href="https://github.com/denoland/sui" rel="noopener noreferrer"><code>sui</code></a> is a Rust library (named after the
+Hindi word for “needle”) that lets you embed data into executable files (ELF on
+Linux, PE on Windows, Mach-O on macOS), which can be extracted later. This is
+useful for bundling assets or configuration inside a binary without external
+files. <code>sui</code> produces valid executables that can be code-signed on macOS and
+Windows.
+<a href="/blog/deno-compile-executable-programs#how-deno-compile-works" rel="noopener noreferrer">We use <code>sui</code> in <code>deno compile</code></a>
+to minimize binary size and for code signing.</p>
+<h2 id="dnt">dnt</h2>
+<p><a href="https://github.com/denoland/dnt" rel="noopener noreferrer"><code>dnt</code></a> (Deno to npm transform) is
+<a href="/blog/publish-esm-cjs-module-dnt" rel="noopener noreferrer">a build tool that converts a Deno module into a format publishable to npm</a>
+by shimming Deno-specific globals, rewriting import statements, and outputting
+types and CommonJS versions. This allows module authors to easily publish hybrid
+npm modules for ESM and CommonJS.</p>
+<p>Here’s an example of using <code>dnt</code> in a build script to package your ES module:</p>
+<div class="highlight highlight-source-rust notranslate"><pre><span class="token comment">// scripts/build_npm.ts</span>
+import <span class="token punctuation">{</span> build<span class="token punctuation">,</span> emptyDir <span class="token punctuation">}</span> from <span class="token string">"jsr:@deno/dnt"</span><span class="token punctuation">;</span>
+
+<span class="token keyword">await</span> <span class="token function">emptyDir</span><span class="token punctuation">(</span><span class="token string">"./npm"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// clear output directory</span>
+<span class="token keyword">await</span> <span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+  entryPoints<span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"./mod.ts"</span><span class="token punctuation">]</span><span class="token punctuation">,</span>    <span class="token comment">// your Deno module entry</span>
+  outDir<span class="token punctuation">:</span> <span class="token string">"./npm"</span><span class="token punctuation">,</span>              <span class="token comment">// output directory for the npm package</span>
+  shims<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+    deno<span class="token punctuation">:</span> <span class="token boolean">true</span>                 <span class="token comment">// shim the Deno namespace for Node</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  package<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+    name<span class="token punctuation">:</span> <span class="token string">"your-package"</span><span class="token punctuation">,</span>
+    version<span class="token punctuation">:</span> <span class="token string">"0.1.0"</span><span class="token punctuation">,</span>
+    description<span class="token punctuation">:</span> <span class="token string">"Your package description"</span><span class="token punctuation">,</span>
+    license<span class="token punctuation">:</span> <span class="token string">"MIT"</span><span class="token punctuation">,</span>
+    repository<span class="token punctuation">:</span> <span class="token punctuation">{</span>
+      <span class="token keyword">type</span><span class="token punctuation">:</span> <span class="token string">"git"</span><span class="token punctuation">,</span>
+      url<span class="token punctuation">:</span> <span class="token string">"git+https://github.com/yourname/your-repo.git"</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// ... other package.json fields as needed</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// After this script runs, the "./npm" folder contains a package.json, README, and the transpiled code ready to publish.</span></pre></div><h2 id="wasmbuild">wasmbuild</h2>
+<p><a href="https://github.com/denoland/wasmbuild" rel="noopener noreferrer">This CLI</a>
+<a href="/blog/wasmbuild" rel="noopener noreferrer">simplifies the process of building and using Rust code in Deno and the browser</a>.
+It generates glue code for calling into Rust crates via <code>wasm-bindgen</code>. The
+output can be easily consumed in Javascript via Wasm. This tool is great in
+situations where you might want to call a complex algorithm in Rust from
+JavaScript, or run Rust code that is more efficient than in JavaScript.</p>
+<p>For a more full example, check out
+<a href="/blog/wasmbuild" rel="noopener noreferrer"><code>wasmbuild_example</code></a> .</p>
+<h2 id="monch">monch</h2>
+<p><a href="https://github.com/denoland/monch" rel="noopener noreferrer">This rust crate</a> is a light-weight parser
+combinator library inspired by <a href="https://crates.io/crates/nom" rel="noopener noreferrer"><code>nom</code></a>. It was
+created to provide a more targeted library for parsing strings and added some
+combinators we found useful. In Deno, <code>monch</code> is used to parse the <code>deno task</code>
+command strings and other similar situations.</p>
+<div class="highlight highlight-source-rust notranslate"><pre><span class="token keyword">use</span> <span class="token namespace">monch<span class="token punctuation">::</span></span><span class="token operator">*</span><span class="token punctuation">;</span>
+
+<span class="token keyword">fn</span> <span class="token function-definition function">parse_comma_separated</span><span class="token punctuation">(</span>input<span class="token punctuation">:</span> <span class="token operator">&amp;</span><span class="token keyword">str</span><span class="token punctuation">)</span> <span class="token punctuation">-&gt;</span> <span class="token class-name">ParseResult</span><span class="token operator">&lt;</span><span class="token lifetime-annotation symbol">'_</span><span class="token punctuation">,</span> <span class="token class-name">Vec</span><span class="token operator">&lt;</span><span class="token operator">&amp;</span><span class="token lifetime-annotation symbol">'_</span> <span class="token keyword">str</span><span class="token operator">&gt;&gt;</span> <span class="token punctuation">{</span>
+  <span class="token keyword">let</span> word <span class="token operator">=</span> <span class="token function">map</span><span class="token punctuation">(</span><span class="token function">take_while</span><span class="token punctuation">(</span><span class="token closure-params"><span class="token closure-punctuation punctuation">|</span>c<span class="token closure-punctuation punctuation">|</span></span> c <span class="token operator">!=</span> <span class="token char">','</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token closure-params"><span class="token closure-punctuation punctuation">|</span>v<span class="token closure-punctuation punctuation">|</span></span> v<span class="token punctuation">.</span><span class="token function">trim</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">let</span> comma <span class="token operator">=</span> <span class="token function">ch</span><span class="token punctuation">(</span><span class="token char">','</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">separated_list</span><span class="token punctuation">(</span>word<span class="token punctuation">,</span> comma<span class="token punctuation">)</span><span class="token punctuation">(</span>input<span class="token punctuation">)</span>
+<span class="token punctuation">}</span>
+
+<span class="token keyword">let</span> parse <span class="token operator">=</span> <span class="token function">with_failure_handling</span><span class="token punctuation">(</span>parse_comma_separated<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token macro property">println!</span><span class="token punctuation">(</span><span class="token string">"{:?}"</span><span class="token punctuation">,</span> <span class="token function">parse</span><span class="token punctuation">(</span><span class="token string">"apple, banana   ,pear  "</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// Ok(["apple","banana","pear"])</span></pre></div><h2 id="deno_task_shell">deno_task_shell</h2>
+<p><a href="https://github.com/denoland/deno_task_shell" rel="noopener noreferrer"><code>deno_task_shell</code></a> is a
+cross-platform shell implementation for parsing and executing scripts. We use
+this in <code>deno task</code>.</p>
+<div class="highlight highlight-source-rust notranslate"><pre><span class="token comment">// parse</span>
+<span class="token keyword">let</span> list <span class="token operator">=</span> <span class="token namespace">deno_task_shell<span class="token punctuation">::</span>parser<span class="token punctuation">::</span></span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token operator">&amp;</span>text<span class="token punctuation">)</span><span class="token operator">?</span><span class="token punctuation">;</span>
+
+<span class="token comment">// execute</span>
+<span class="token keyword">let</span> env_vars <span class="token operator">=</span> <span class="token namespace">std<span class="token punctuation">::</span>env<span class="token punctuation">::</span></span><span class="token function">vars_os</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">::</span><span class="token operator">&lt;</span><span class="token class-name">HashMap</span><span class="token operator">&lt;</span>_<span class="token punctuation">,</span> _<span class="token operator">&gt;&gt;</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">let</span> cwd <span class="token operator">=</span> <span class="token namespace">std<span class="token punctuation">::</span>env<span class="token punctuation">::</span></span><span class="token function">current_dir</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">?</span><span class="token punctuation">;</span>
+
+<span class="token keyword">let</span> exit_code <span class="token operator">=</span> <span class="token namespace">deno_task_shell<span class="token punctuation">::</span></span><span class="token function">execute</span><span class="token punctuation">(</span>
+  list<span class="token punctuation">,</span>
+  env_vars<span class="token punctuation">,</span>
+  cwd<span class="token punctuation">,</span>
+  <span class="token class-name">Default</span><span class="token punctuation">::</span><span class="token function">default</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token comment">// custom commands</span>
+<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token keyword">await</span><span class="token punctuation">;</span></pre></div><h2 id="flaky_test">flaky_test</h2>
+<p><a href="https://github.com/denoland/flaky_test" rel="noopener noreferrer"><code>flaky_test</code></a> is a Rust attribute macro
+that helps manage flaky tests by running a test multiple times and only failing
+it if it fails every time. This is useful for tests that are known to be flaky
+(due to non deterministic issues like network or availability). By default, the
+macro runs the marked test three times. If at least one run passes, the overall
+test is considered passed.</p>
+<div class="highlight highlight-source-rust notranslate"><pre><span class="token keyword">use</span> <span class="token namespace">flaky_test<span class="token punctuation">::</span></span>flaky_test<span class="token punctuation">;</span>
+
+<span class="token attribute attr-name">#[flaky_test]</span>
+<span class="token keyword">fn</span> <span class="token function-definition function">my_unstable_test</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token comment">// This test will be tried up to 3 times.</span>
+    <span class="token keyword">let</span> result <span class="token operator">=</span> <span class="token function">some_operation_that_sometimes_flakes</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token macro property">assert!</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span><span class="token function">is_ok</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></pre></div><h2 id="vnotify">vnotify</h2>
+<p><a href="https://github.com/denoland/vnotify" rel="noopener noreferrer"><code>vnotify</code></a> (short for “vectorized
+notification”) is a Rust library for efficiently monitoring changes in Amazon S3
+buckets that contain millions of objects. It achieves this without any external
+services using a clever hashing strategy: when an object in S3 is updated,
+<code>vnotify</code> writes a small notification file under a special prefix. Clients can
+quickly check a fixed set of these notifications to detect updates across the
+whole bucket with one or two S3 API calls. This is useful for caching or syncing
+scenarios where you want to know if any object in a huge bucket changed without
+scanning the entire bucket.</p>
+<div class="highlight highlight-source-rust notranslate"><pre><span class="token keyword">use</span> <span class="token namespace">aws_sdk_s3<span class="token punctuation">::</span></span><span class="token class-name">Client</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token namespace">vnotify<span class="token punctuation">::</span></span><span class="token punctuation">{</span><span class="token class-name">VnotifyCache</span><span class="token punctuation">,</span> <span class="token class-name">Config</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+<span class="token keyword">use</span> <span class="token namespace">bytes<span class="token punctuation">::</span></span><span class="token class-name">Bytes</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Set up the S3 client and vnotify configuration.</span>
+<span class="token keyword">let</span> s3_client <span class="token operator">=</span> <span class="token class-name">Client</span><span class="token punctuation">::</span><span class="token function">new</span><span class="token punctuation">(</span><span class="token operator">&amp;</span><span class="token namespace">aws_config<span class="token punctuation">::</span></span><span class="token function">load_from_env</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token keyword">await</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">let</span> config <span class="token operator">=</span> <span class="token class-name">Config</span><span class="token punctuation">::</span><span class="token function">new</span><span class="token punctuation">(</span><span class="token string">"my-bucket-name"</span><span class="token punctuation">.</span><span class="token function">to_string</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"vnotify_prefix/"</span><span class="token punctuation">.</span><span class="token function">to_string</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">let</span> cache <span class="token operator">=</span> <span class="token class-name">VnotifyCache</span><span class="token punctuation">::</span><span class="token function">new</span><span class="token punctuation">(</span>s3_client<span class="token punctuation">,</span> config<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Signal an update (writer side) – for example, after modifying "path/to/object".</span>
+cache<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span><span class="token string">"path/to/object"</span><span class="token punctuation">,</span> <span class="token class-name">Bytes</span><span class="token punctuation">::</span><span class="token function">from_static</span><span class="token punctuation">(</span><span class="token string">b"1"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token keyword">await</span><span class="token operator">?</span><span class="token punctuation">;</span>
+<span class="token comment">// (The content '1' is arbitrary; the key's ETag changing is what signals a change.)</span>
+
+<span class="token comment">// Later, a reader can quickly check if *any* object changed by checking the special "_" key:</span>
+<span class="token keyword">if</span> cache<span class="token punctuation">.</span><span class="token function">try_get</span><span class="token punctuation">(</span><span class="token string">"_"</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token keyword">await</span><span class="token operator">?</span><span class="token punctuation">.</span><span class="token function">is_some</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+    <span class="token macro property">println!</span><span class="token punctuation">(</span><span class="token string">"Some object in the bucket changed, need to refresh cache."</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+    <span class="token comment">// The client could then list "vnotify_prefix/" keys to find out which segment changed.</span>
+<span class="token punctuation">}</span></pre></div><h2 id="whats-next">What’s next</h2>
+<p>These open source projects not only power Deno, but also used across the broader
+developer ecosystem. We’ll continue to build tools that make development simpler
+and more secure, and hope you’ll explore and build something great with them.</p>
+<blockquote>
+<p><strong>🚨️ <a href="/deploy" rel="noopener noreferrer">There have been major updates to Deno Deploy!</a> 🚨️</strong></p>
+<ul>
+<li><a href="https://x.com/deno_land/status/1976281146184040625" rel="noopener noreferrer">New <code>deno --tunnel</code> command to connect your local and Deno Deploy environments</a></li>
+<li><a href="https://docs.deno.com/deploy/reference/databases/" rel="noopener noreferrer">Database connections and data explorer right in the UI</a></li>
+<li><a href="https://docs.deno.com/deploy/reference/cloud-connections/" rel="noopener noreferrer">Connect to AWS and GCP via Cloud Connections</a></li>
+<li><a href="https://docs.deno.com/deploy/reference/observability/" rel="noopener noreferrer">Automatic and immediate observability and telemetry</a></li>
+</ul>
+</blockquote>
+</div></article></div><table><tr><th colspan="2">Metadata</th></tr><tr><td>Title</td><td>Deno's Other Open Source Projects | Deno</td></tr><tr><td>Description</td><td>Here’s a roundup of some of our popular open source libraries and how we use them in Deno.</td></tr><tr><td>Image</td><td><img src="http://localhost:3001/blog/open-source/og.png" alt="Deno's Other Open Source Projects | Deno"></td></tr><tr><td>Date</td><td>October 16, 2025</td></tr><tr><td>Author</td><td>Andy Jiang</td></tr><tr><td>Tags</td><td>Engineering</td></tr></table></main></html>

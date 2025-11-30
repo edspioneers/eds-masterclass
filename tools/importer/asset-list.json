@@ -1,0 +1,26 @@
+{
+  "assets": [
+    "http://localhost:3001/blog/fresh-and-vite/og.png",
+    "http://localhost:3001/blog/updates-from-tc39/og.png",
+    "http://localhost:3001/blog/deno-deploy-highlights/deploy-highlights.webp",
+    "http://localhost:3001/blog/deno-deploy-highlights/builds-panel.webp",
+    "http://localhost:3001/blog/deno-deploy-highlights/add-kv.webp",
+    "http://localhost:3001/blog/deno-deploy-highlights/db-screens.webp",
+    "http://localhost:3001/blog/deno-deploy-highlights/db-explorer.webp",
+    "http://localhost:3001/blog/deno-deploy-highlights/metrics.webp",
+    "http://localhost:3001/blog/deno-deploy-highlights/404-panel.webp",
+    "http://localhost:3001/blog/deno-deploy-highlights/traces.webp",
+    "http://localhost:3001/blog/deno-deploy-highlights/otel1.webp",
+    "http://localhost:3001/blog/deno-deploy-highlights/runtime-config.webp",
+    "http://localhost:3001/blog/deno-deploy-highlights/build-settings.webp",
+    "http://localhost:3001/blog/deno-deploy-highlights/tunnel.webp",
+    "http://localhost:3001/blog/deno-deploy-highlights/cloud-connect.webp",
+    "http://localhost:3001/blog/deno-deploy-highlights/playground.webp",
+    "http://localhost:3001/blog/deno-deploy-highlights/presets.webp",
+    "http://localhost:3001/button",
+    "http://localhost:3001/blog/deno-deploy-highlights/deploy-highlights-og.webp",
+    "http://localhost:3001/blog/open-source/og.png",
+    "http://localhost:3001/blog/v2.5/og.webp"
+  ],
+  "siteOrigin": "https://deno.com"
+}

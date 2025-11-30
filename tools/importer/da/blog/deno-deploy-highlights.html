@@ -1,0 +1,181 @@
+<body><main><div><p><img src="http://localhost:3001/blog/deno-deploy-highlights/deploy-highlights.webp" alt="Deno Deploy highlights"></p>
+<h1 id="my-highlights-from-the-new-deno-deploy">My highlights from the new Deno Deploy</h1>
+<p>The team here at Deno has been working hard to improve <a href="/deploy/">Deno Deploy</a>, rebuilding it from scratch to be a more flexible, powerful, and simpler hosting platform. You might have seen us making some noise about this in <a href="https://bsky.app/profile/deno.land">social</a> <a href="https://twitter.com/deno_land">media</a> over the last few months.</p>
+<p>We ran an early access program with the community testing it out and giving valuable feedback to help us make this huge update possible.</p>
+<p>Now, this updated version of Deno Deploy is available to all, and I wanted to call out just a few of the reasons I’m excited about this update.</p>
+<p>I’m no stranger to hosting and development platforms. I spent 7 years working at Netlify while they were defining big parts of the modern web hosting category and establishing many of the conventions and tools that developers now consider essential for web development projects. Those perspectives only add to my enthusiasm for the road ahead for Deno with Deploy.</p>
+<h2 id="integrated-cicd">Integrated CI/CD</h2>
+<blockquote>
+<p><em><strong>tl;dr:</strong> You now have the option to run your builds within Deno Deploy, or on your own CI/CD</em></p>
+</blockquote>
+<p>In the old Deno Deploy (still available as “Deploy Classic”) deploys happened by performing a build in your own system and then pushing that result to Deno Deploy. That might have been from your own CI/CD system or GitHub Actions. This option is still available, but now we also offer an optimized, high performance, integrated build environment to do this for you.</p>
+<p><img src="http://localhost:3001/blog/deno-deploy-highlights/builds-panel.webp" alt="Builds listing page"></p>
+<p>The list of recent builds in Deno Deploy’s console</p>
+<p>Our build pipeline offers great visibility into the deployment process and your automated builds. Just connect a GitHub repo to your application and off you go.</p>
+<p>Naturally, this comes along with the ability to perform branch-deploys, preview builds, rollbacks, and all that good stuff that it would be hard to imagine working without these days.</p>
+<p>This sort of feature has been available in other popular hosting platforms for a while, so it might not feel like news. But Deno Deploy also offers interesting controls over the hosting model, with ready-made optimisations for static or dynamic applications, and autodetection and optimisations for popular tools and frameworks.</p>
+<p>Now you don’t have to choose between a simple and integrated CI/CD setup, and some of the more advanced architectural controls that we’re introducing.</p>
+<h2 id="easy-on-ramp-for-working-with-data">Easy on-ramp for working with data</h2>
+<blockquote>
+<p><em><strong>tl;dr:</strong> Quickly start with KV then easily graduate to a full database when necessary</em></p>
+</blockquote>
+<p>Manageable access to, and admin of data services is often one of the first headaches when sites and applications increase in complexity. We wanted to simplify that.</p>
+<p>Together, <a href="https://docs.deno.com/runtime/">the Deno runtime</a> and Deno Deploy offer simple access to reading and writing data to persistent storage via <a href="/kv">Deno KV</a>, our popular KV store.</p>
+<p>With surprisingly little code, you can begin managing data in a persistent data store:</p>
+<pre><code>const kv = await Deno.openKv();
+
+// set some preferences data for a user called Ada
+const result = await kv.set(["preferences", "ada"], {
+  username: "ada",
+  theme: "dark",
+  language: "en-US",
+});
+
+// get the data
+const entry = await kv.get(["preferences", "ada"]);
+</code></pre>
+<p>When deployed to Deno Deploy, we now ask you <a href="https://docs.deno.com/deploy/reference/deno_kv/">to create and associate a KV store with your application</a>. As your app grows, this makes it easy to move to a full data layer, like Postgres.</p>
+<p><img src="http://localhost:3001/blog/deno-deploy-highlights/add-kv.webp" alt="Adding a KV store to an application"></p>
+<p>Adding a KV store to an application</p>
+<h3 id="postgres-and-more">Postgres and more</h3>
+<blockquote>
+<p><em><strong>tl;dr:</strong> Deploy organises your databases to prevent data pollution between environments</em></p>
+</blockquote>
+<p>We’ve made it simple <a href="https://docs.deno.com/deploy/reference/databases/#getting-started">to link and provision databases</a> from third-party database providers to your applications in ways that make sense for how developers work with code.</p>
+<p>Our database integrations do some work behind the scenes to create database instances for each of your development and production contexts. That means that you can provision or allocate a database to one of your applications, and <a href="https://docs.deno.com/deploy/reference/databases/#connecting-an-app-to-a-database">get separate databases for each environment</a>.</p>
+<p>It’s very helpful to know that the data in your development or staging environments will not pollute the data in your production environment. Deno Deploy just handles that for you. I love it!</p>
+<p>This also means that your application code can remain the same in all contexts. <a href="https://docs.deno.com/deploy/reference/databases/#automatic-environment-variables">Environment variables managed automatically</a> by Deno Deploy in different contexts take care of all the scoping and targeting for you:</p>
+<pre><code>import { Pool } from "npm:pg";
+
+// No configuration needed - Deno Deploy handles this automatically
+const pool = new Pool();
+
+Deno.serve(async () => {
+  // Use the database
+  const result = await pool.query("SELECT * FROM users WHERE id = $1", [123]);
+
+  return new Response(JSON.stringify(result.rows), {
+    headers: { "content-type": "application/json" },
+  });
+});
+</code></pre>
+<p><img src="http://localhost:3001/blog/deno-deploy-highlights/db-screens.webp" alt="Database config screens"></p>
+<p>We can review the available databases and explore them with the DB explorer</p>
+<p>We’ve partnered with Prisma to provision new databases for free. Again, all from the Deno Deploy console. It’s an incredibly convenient way of adding databases to your applications.</p>
+<p>We even have <a href="https://docs.deno.com/deploy/reference/databases/#migration-and-schema-management">tooling for schema migrations</a> to help as your applications grow.</p>
+<p><em>Do you want to see a specific database supported? Let us know on <a href="https://bsky.app/profile/deno.land">social</a> <a href="https://twitter.com/deno_land">media</a> or in <a href="https://discord.gg/deno">Discord</a>.</em></p>
+<h3 id="see-your-data">See your data</h3>
+<p>It’s also simple to visualize your data right there in the Deno Deploy console. The database explorer lets you poke around and query your data, across any of the contexts where your databases live.</p>
+<p><img src="http://localhost:3001/blog/deno-deploy-highlights/db-explorer.webp" alt="Database explorer"></p>
+<p>The database explore with interactive SQL editor</p>
+<h2 id="metrics">Metrics</h2>
+<blockquote>
+<p><em><strong>tl;dr:</strong> All apps get useful data and analytics, out of the box</em></p>
+</blockquote>
+<p>Speaking of data, Deno Deploy surfaces a variety of metrics and analytics for every application. You don’t need to do anything to enable this beyond deploying your application.</p>
+<p><img src="http://localhost:3001/blog/deno-deploy-highlights/metrics.webp" alt="Metrics overview"></p>
+<p>Excerpt of the metrics summary for an application</p>
+<p>Deploy’s metrics are easy to explore with the interactive charting and a variety of presets and custom timeframes.</p>
+<p>I also like getting access to the automatic 404 logging. The concise little 404 report which groups the 404s by path and orders them by frequency is very handy for catching routes that need handling.</p>
+<p><img src="http://localhost:3001/blog/deno-deploy-highlights/404-panel.webp" alt="404 panel"></p>
+<p>The 404 report can be filtered and have its reporting timeframe adjusted</p>
+<p>Whether you are serving a static site or a dynamic app, there are useful metrics available here, including CPU time, memory usage, V8 garbage collection time, and allocated heap size.</p>
+<p>Find all of these in the console for your applications.</p>
+<h2 id="automatic-observability-with-otel">Automatic observability with OTel</h2>
+<blockquote>
+<p><em><strong>tl;dr:</strong> Easily observe and instrument your code with built-in support for OpenTelemetry</em></p>
+</blockquote>
+<p>For more complex and critical applications, rich telemetry is vital. The <a href="https://docs.deno.com/runtime/fundamentals/open_telemetry/">built-in support for OpenTelemetry</a> makes it simple for developers to observe what is happening in their applications.</p>
+<p><img src="http://localhost:3001/blog/deno-deploy-highlights/traces.webp" alt="application traces"></p>
+<p>Logs, traces, and metrics are built in</p>
+<p>Any project hosted on Deno Deploy (even if there isn’t specific telemetry instrumentation code) will automatically show logs, traces, and metrics in the application console. But you can go further by connecting these to your own OTel service along with whatever additional instrumentation you specify in your code.</p>
+<p>We shipped support for <a href="/blog/v2.2#built-in-opentelemetry-integration">auto-instrumented observability and telemetry in Deno 2.2</a>, and by hosting your project in Deno Deploy, the job of connecting your application to a tool like Grafana becomes very straight forward.</p>
+<p><img src="http://localhost:3001/blog/deno-deploy-highlights/otel1.webp" alt="Telemetry data"></p>
+<p>Telemetry data</p>
+<p>There is <a href="https://docs.deno.com/runtime/fundamentals/open_telemetry/#auto-instrumentation">auto-instrumentation</a> associated with incoming and outgoing HTTP requests.</p>
+<p>Our examples have a number of <a href="https://docs.deno.com/examples/#opentelemetry">tutorials on OTel</a> to explore, including:</p>
+<ul>
+<li><a href="https://docs.deno.com/examples/deploy_otel_tutorial/">Monitor your app with OpenTelemetry</a></li>
+<li><a href="https://docs.deno.com/examples/grafana_tutorial/">How to export telemetry data to Grafana</a></li>
+</ul>
+<h2 id="application-settings-and-env-vars">Application settings and env vars</h2>
+<blockquote>
+<p><em><strong>tl;dr:</strong> You can tune the infrastructure for your applications and manage things centrally</em></p>
+</blockquote>
+<p>When creating a new application, you can choose to tune it as a dynamic app or a static site. This will shape the server configuration and caching behaviours with some sensible defaults.</p>
+<p><img src="http://localhost:3001/blog/deno-deploy-highlights/runtime-config.webp" alt="Runtime config"></p>
+<p>Optimizing the runtime to serve a dynamic or a static app</p>
+<p>I really like this control. I’m a big advocate in keeping projects as simple as possible, so being able to serve static files and add server logic only when needed, all in one product, feels like a huge win.</p>
+<p>You can also <a href="https://docs.deno.com/deploy/reference/env_vars_and_contexts/#adding%2C-editing-and-removing-environment-variables">manage environment variables and secrets</a> at an application level, and at the org level to help share them across all the applications in your organisation.</p>
+<p>You’ll find controls in the console to manage these along with the ability to import the contents of a <code>.env</code> file, and you can also do this from the command line.</p>
+<p><img src="http://localhost:3001/blog/deno-deploy-highlights/build-settings.webp" alt="Build settings"></p>
+<p>The build settings screen includes environment variable controls</p>
+<h2 id="at-your-command-line">At your command line</h2>
+<blockquote>
+<p><em><strong>tl;dr:</strong> The <code>deno</code> CLI now includes commands to work with Deno Deploy</em></p>
+</blockquote>
+<p><a href="/blog/deno-deploy-highlights/deploy-command.mp4"></a></p>
+<p>Deploy Classic has the <a href="https://docs.deno.com/deploy/classic/deployctl/"><code>deployctl</code></a> utility to perform a variety of admin tasks, but the new iteration of Deno Deploy brings things closer to the <code>deno</code> runtime so there is no need to install additional tools.</p>
+<p>Now, just by having the <a href="https://docs.deno.com/runtime/getting_started/installation/">Deno CLI installed</a>, you’ll have commands like <a href="https://docs.deno.com/runtime/reference/cli/deploy/"><code>deno deploy</code></a> at your fingertips which lets you… well… deploy to Deno Deploy among other things.</p>
+<p>You can also use this to manage your project’s environment variables and other configurations, push code to preview builds or the production environment, <a href="https://docs.deno.com/runtime/reference/cli/deploy/">and more</a>.</p>
+<p><a href="/blog/deno-deploy-highlights/blog-env-opt.mp4"></a></p>
+<h2 id="connect-environments-with-tunnel">Connect environments with <code>tunnel</code></h2>
+<blockquote>
+<p><em><strong>tl;dr:</strong> You can close the gap between your local and production environments</em></p>
+</blockquote>
+<p>One goal of the recent evolutions to Deno Deploy has been to improve the development efficiency on projects. A huge part of that can come from reducing the friction when developing locally, and closing the perceived logical gap between local and production environments.</p>
+<p>In short, please, please let my local work be a good facsimile of what happens in staging and production environments!</p>
+<p>The <a href="https://x.com/deno_land/status/1976281146184040625"><code>--tunnel</code></a> flag connects your local environment to your application in Deno Deploy to enable a few handy things:</p>
+<ul>
+<li>Access the centrally managed environment variable, which eliminates the need to distribute these to the team in order for them to get their local builds working</li>
+<li>Serve your local version on a public URL for easier sharing, reviewing, and debugging</li>
+<li>Stream logs and traces directly back to your local terminal for easier observability during development</li>
+</ul>
+<p><img src="http://localhost:3001/blog/deno-deploy-highlights/tunnel.webp" alt="Tunnel in the terminal"></p>
+<p>The <code>--tunnel</code> option lets you share a link to your app running locally</p>
+<p>The <code>--tunnel</code> option is available to the <code>run</code> and <code>task</code> commands. Over time, you can expect it to become even more powerful as more utilities are added.</p>
+<h2 id="connect-your-apps-to-aws-and-gcp">Connect your apps to AWS and GCP</h2>
+<blockquote>
+<p><em><strong>tl;dr:</strong> Cloud Connect simplifies your code when connecting to different cloud services</em></p>
+</blockquote>
+<p>Often we have to use resources in AWS and GCP, but it can be a pain to manually juggle credentials and configurations.</p>
+<p>With our new <a href="https://docs.deno.com/deploy/reference/cloud-connections/">Cloud Connections</a>, you can configure an <a href="https://docs.deno.com/deploy/reference/oidc/">OIDC connection</a> with your provider, then use them more simply in your code. This is another example of ways the platform can remove friction for developers, and make it easier to manage and reason about external services.</p>
+<p><img src="http://localhost:3001/blog/deno-deploy-highlights/cloud-connect.webp" alt="Cloud connection UI"></p>
+<p>Cloud Connections take the authentication and configuration burden out of your application code</p>
+<pre><code>const BUCKET_NAME = "dry-pheasant-52";
+const s3 = new S3Client({
+  region: "us-east-2",
+});
+</code></pre>
+<h2 id="playgrounds">Playgrounds</h2>
+<blockquote>
+<p><em><strong>tl;dr:</strong> Play with code and explore the results in the browser. Our Playgrounds got better!</em></p>
+</blockquote>
+<p>There have been some big power-ups to playgrounds in their new incarnation. <a href="https://docs.deno.com/deploy/reference/playgrounds/">Playgrounds</a> offer an in-browser code editor which deploys every time you save your changes. Now they support multiple files, and have become a simple way to explore a concept, test some code, and inspect the results all without leaving your browser tab.</p>
+<p><img src="http://localhost:3001/blog/deno-deploy-highlights/playground.webp" alt="Playground view"></p>
+<p>Playgrounds have a file explorer and code editor, along with a preview and HTTP explorer</p>
+<p>Playgrounds get built and deployed to Deno Deploy and give you the same logs and traces as your regular Deno applications, and also provide <a href="https://docs.deno.com/deploy/reference/playgrounds/#using-the-http-explorer">an HTTP explorer</a> to help you test your projects.</p>
+<p>I find it a very handy way to test APIs that I’m experimenting with. The ability to test different HTTP methods and control HTTP headers from the built-in HTTP explorer is so useful.</p>
+<p>Playgrounds are now moved under the Applications tab in the <a href="https://console.deno.com">console</a>, and I happen to know that there are more interesting developments coming to Playgrounds before too long which will make them even more useful. I recommend you watch out for those!</p>
+<h2 id="making-it-easier-to-try-deno-deploy">Making it easier to try Deno Deploy</h2>
+<blockquote>
+<p><em><strong>tl;dr:</strong> Deploy automatically applies integrations and presets according to your project code</em></p>
+</blockquote>
+<p>We also want to make it simple to get a project onto Deno Deploy. Whether you are just exploring to see what the fuss is about, starting a new project, or migrating from somewhere else.</p>
+<p>When linking your repo to setup a new application in Deno Deploy, it will inspect that code <a href="https://docs.deno.com/deploy/reference/frameworks/">to detect major tools and frameworks</a> and optimise the environment accordingly. We have a variety of integrations and optimisations to help set things up smoothly and get the best from the environment for your application.</p>
+<p><img src="http://localhost:3001/blog/deno-deploy-highlights/presets.webp" alt="Framework presets"></p>
+<p>You can choose form a variety of integrations and presets</p>
+<p>It’s also easy to create starter templates for your organisation or create an application from an existing code repo with <a href="https://docs.deno.com/deploy/reference/button/">Deploy buttons</a>. These are just hyperlinks to our app creation page with some configuration parameters.</p>
+<ul>
+<li><a href="https://console.deno.com/new?clone=https://github.com/denoland/examples&#x26;path=hello-worldL"><img src="http://localhost:3001/button" alt="Deploy on Deno"></a> — A simple hello world site</li>
+<li><a href="https://console.deno.com/new?clone=https://github.com/denoland/tutorial-with-next"><img src="http://localhost:3001/button" alt="Deploy on Deno"></a> — A next.js project</li>
+<li><a href="https://console.deno.com/new?clone=https://github.com/denoland/tutorial-with-fresh"><img src="http://localhost:3001/button" alt="Deploy on Deno"></a> — A Fresh project</li>
+<li><a href="https://console.deno.com/new?clone=https://github.com/denoland/tutorial-with-astro"><img src="http://localhost:3001/button" alt="Deploy on Deno"></a> — An Astro project</li>
+</ul>
+<p>Try one for yourself above to get a simple example site started, or see how you could create a set of project scaffolds for your team to use for bootstrapping projects by taking a look at the <a href="https://docs.deno.com/deploy/reference/button/">docs for our Deploy Button</a>.</p>
+<h2 id="whats-next">What’s next?</h2>
+<p>This is just a small sampling of what is available on Deno Deploy. The best way to get a real feel for how the platform is evolving is to <a href="/deploy/">try it</a>.</p>
+<p>Deploying one of the <a href="#making-it-easier-to-try-deno-deploy">simple starter templates above</a> can be an easy way to get a little application up and running so you have something to explore. You can sign up, create an orgnization and some apps, and start deploying things for free.</p>
+<p>There are lots more things coming soon to the platform to help you build, deploy, and manage your web applications. I’m pretty excited about the developments happening under the surface to support some great new tools and ways for you to run code as part of your web stack.</p>
+<p><em>What are you building with Deno? Let us know on <a href="https://twitter.com/deno_land">Twitter</a>, <a href="https://bsky.app/profile/deno.land">Bluesky</a>, or <a href="https://discord.gg/deno">Discord</a>!</em></p>
+<div class="metadata"><div><div>Title</div><div>My highlights from the new Deno Deploy | Deno</div></div><div><div>Description</div><div>Highlights from the new version of Deno Deploy.</div></div><div><div>Image</div><div><img src="http://localhost:3001/blog/deno-deploy-highlights/deploy-highlights-og.webp" alt="My highlights from the new Deno Deploy | Deno"></div></div><div><div>Date</div><div>October 21, 2025</div></div><div><div>Author</div><div>Phil Hawksworth</div></div><div><div>Tags</div><div>Product Update, Deno Deploy, Deno KV</div></div></div></div></main></body>

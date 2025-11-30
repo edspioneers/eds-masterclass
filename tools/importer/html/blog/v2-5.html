@@ -1,0 +1,549 @@
+<html><head></head><main tabindex="-1" id="main"><div class="md:mt-16"><img src="http://localhost:3001/blog/v2.5/og.webp" alt="Deno 2.5" class="mx-auto max-w-3xl w-full mt-4 sm:mt-0">
+</div><div class="mx-auto px-4 pb-16 pt-8 md:pt-16 max-w-screen-md"><article class=""><div class=""><h1 class="blog-header text-4xl font-bold text-gray-800 sm:text-6xl col-span-7">Deno 2.5: Permissions in the config file</h1></div><div class="markdown-body pb-16"><p>To upgrade to Deno 2.5, run the following in your terminal:</p>
+<div class="highlight highlight-source-bash notranslate"><pre>deno upgrade</pre></div><p>If Deno is not yet installed, run one of the following commands to install or
+<a href="https://docs.deno.com/runtime/manual/getting_started/installation" rel="noopener noreferrer">learn how to install it here</a>.</p>
+<div class="highlight highlight-source-bash notranslate"><pre><span class="token comment"># Using Shell (macOS and Linux):</span>
+<span class="token function">curl</span> <span class="token parameter variable">-fsSL</span> https://deno.land/install.sh <span class="token operator">|</span> <span class="token function">sh</span>
+
+<span class="token comment"># Using PowerShell (Windows):</span>
+iwr https://deno.land/install.ps1 <span class="token parameter variable">-useb</span> <span class="token operator">|</span> iex</pre></div><h2 id="whats-new-in-deno-25">What’s new in Deno 2.5</h2>
+<ul>
+<li><a href="#permission-sets-in-config">Permission sets in config</a></li>
+<li><a href="#setup-and-teardown-apis-to-denotest">Setup and teardown APIs to <code>Deno.test</code></a></li>
+<li><a href="#websocket-headers">WebSocket headers</a></li>
+<li><a href="#runtime-api-for-deno-bundle">Runtime API for <code>deno bundle</code></a></li>
+<li><a href="#html-entrypoint-support-in-deno-bundle">HTML entrypoint support in <code>deno bundle</code></a></li>
+<li><a href="#permissions-audit-log">Permissions audit log</a></li>
+<li><a href="#deno-run-lists-all-tasks-and-scripts"><code>deno run</code> lists all tasks and scripts</a></li>
+<li><a href="#simpler-stdio-from-denochildprocess">Simpler stdio from <code>Deno.ChildProcess</code></a></li>
+<li><a href="#more-consistent-behavior-for-formatting-options">More consistent behavior for formatting options</a></li>
+<li><a href="#dependency-management">Dependency management</a></li>
+<li><a href="#nodejs-settimeout-and-setinterval-with---unstable-node-globals">Node.js <code>setTimeout</code> and <code>setInterval</code> with <code>--unstable-node-globals</code></a></li>
+<li><a href="#--watch-environment-variables-with---env-file"><code>--watch</code> environment variables with <code>--env-file</code></a></li>
+<li><a href="#set-tcp-backlog-size-to-denoserve">Set TCP backlog size to <code>Deno.serve</code></a></li>
+<li><a href="#tsconfig-compatibility-for-frameworks">TSConfig compatibility for frameworks</a></li>
+<li><a href="#performance-improvements">Performance improvements</a></li>
+<li><a href="#other-features">Other features</a></li>
+<li><a href="#v8-140-and-typescript-592">V8 14.0 and TypeScript 5.9.2</a></li>
+<li><a href="#acknowledgments">Acknowledgments</a></li>
+</ul>
+<h2 id="permission-sets-in-config">Permission sets in config</h2>
+<p>Oftentimes, granular permissions vary depending on context and subcommand: you
+may run <code>deno main.ts</code> with a certain set of permissions that differ from
+<code>deno test</code> or <code>deno compile</code>.</p>
+<p>To simplify managing permissions in these scenarios, we have added permission
+sets that you can set in your <code>deno.json</code> config file:</p>
+<div class="highlight highlight-source-json notranslate"><div class="markdown-code-title">deno.json</div><pre><span class="token punctuation">{</span>
+  <span class="token property">"permissions"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"process-data"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"read"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"./data"</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+      <span class="token property">"write"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"./data"</span><span class="token punctuation">]</span>
+    <span class="token punctuation">}</span>
+    <span class="token comment">// ...more permissions can be defined here by name...</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token property">"tasks"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"dev"</span><span class="token operator">:</span> <span class="token string">"deno run -P=process-data main.ts"</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></pre></div><p>That way, you can run a command with pre-defined permission flags:</p>
+<div class="highlight highlight-source-bash notranslate"><pre><span class="token comment"># Long</span>
+deno run --permission-set<span class="token operator">=</span>process-data main.ts
+
+<span class="token comment"># Short</span>
+deno run <span class="token parameter variable">-P</span><span class="token operator">=</span>process-data main.ts</pre></div><p>You can also set a <code>default</code> permission set, which can be used with <code>-P</code> with no
+argument:</p>
+<div class="highlight highlight-source-json notranslate"><div class="markdown-code-title">deno.json</div><pre><span class="token punctuation">{</span>
+  <span class="token property">"permissions"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"default"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"read"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"./deno.json"</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+      <span class="token property">"env"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+      <span class="token property">"run"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+        <span class="token property">"allow"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"git"</span><span class="token punctuation">]</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token property">"tasks"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"dev"</span><span class="token operator">:</span> <span class="token string">"deno run -P main.ts"</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></pre></div><p>Permissions can also be optionally specified within the <code>test</code>, <code>bench</code>, or
+<code>compile</code> keys:</p>
+<div class="highlight highlight-source-json notranslate"><div class="markdown-code-title">deno.json</div><pre><span class="token punctuation">{</span>
+  <span class="token property">"test"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"permissions"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+      <span class="token property">"read"</span><span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"./data"</span><span class="token punctuation">]</span>
+    <span class="token punctuation">}</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></pre></div><p>When defined this way, you must pass the permission flag <code>-P</code> when running
+<code>deno test</code>, or you’ll receive an error:</p>
+<div class="highlight highlight-source-bash notranslate"><pre><span class="token operator">&gt;</span> deno <span class="token builtin class-name">test</span>
+error: Test permissions were found <span class="token keyword">in</span> the config file. Did you mean to run with <span class="token variable"><span class="token variable">`</span><span class="token parameter variable">-P</span><span class="token variable">`</span></span>?
+    at file:///Users/david/dev/scratch2/package-a/deno.json
+<span class="token operator">&gt;</span> deno <span class="token builtin class-name">test</span> <span class="token parameter variable">-P</span>
+<span class="token punctuation">..</span>.runs<span class="token punctuation">..</span>.
+<span class="token operator">&gt;</span> deno <span class="token builtin class-name">test</span> --allow-read
+<span class="token punctuation">..</span>.runs<span class="token punctuation">..</span>.
+<span class="token operator">&gt;</span> deno <span class="token builtin class-name">test</span> <span class="token parameter variable">-A</span>
+<span class="token punctuation">..</span>.runs<span class="token punctuation">..</span>.</pre></div><p>For more information, please refer to
+<a href="https://docs.deno.com/runtime/fundamentals/configuration#permissions" rel="noopener noreferrer">our documentation</a>.</p>
+<h2 id="setup-and-teardown-apis-to-denotest">Setup and teardown APIs to <code>Deno.test</code></h2>
+<p>To make testing easier, we’ve added these new APIs to
+<a href="https://docs.deno.com/runtime/fundamentals/testing/" rel="noopener noreferrer"><code>Deno.test</code></a> to help
+perform setup and teardown for test cases:</p>
+<ul>
+<li><code>Deno.test.beforeAll</code></li>
+<li><code>Deno.test.beforeEach</code></li>
+<li><code>Deno.test.afterAll</code></li>
+<li><code>Deno.test.afterEach</code></li>
+</ul>
+<p>Here’s a concrete example showing how to set up a test database:</p>
+<div class="highlight highlight-source-ts notranslate"><div class="markdown-code-title">test.ts</div><pre><span class="token keyword module">import</span> <span class="token imports">sqlite</span> <span class="token keyword module">from</span> <span class="token string">"node:sqlite"</span><span class="token punctuation">;</span>
+<span class="token keyword module">import</span> <span class="token imports"><span class="token punctuation">{</span> assertEquals <span class="token punctuation">}</span></span> <span class="token keyword module">from</span> <span class="token string">"jsr:@std/assert"</span><span class="token punctuation">;</span>
+
+<span class="token keyword">let</span> testDb<span class="token operator">:</span> sqlite<span class="token punctuation">.</span><span class="token property-access"><span class="token maybe-class-name">DatabaseSync</span></span><span class="token punctuation">;</span>
+
+<span class="token comment">// Run once before all tests</span>
+<span class="token maybe-class-name">Deno</span><span class="token punctuation">.</span><span class="token property-access">test</span><span class="token punctuation">.</span><span class="token method function property-access">beforeAll</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token arrow operator">=&gt;</span> <span class="token punctuation">{</span>
+  testDb <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">sqlite</span><span class="token punctuation">.</span><span class="token method function property-access"><span class="token maybe-class-name">DatabaseSync</span></span><span class="token punctuation">(</span><span class="token string">":memory:"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  testDb<span class="token punctuation">.</span><span class="token method function property-access">exec</span><span class="token punctuation">(</span><span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">CREATE TABLE users (
+      id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE
+    );
+  </span><span class="token template-punctuation string">`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Run before each individual test</span>
+<span class="token maybe-class-name">Deno</span><span class="token punctuation">.</span><span class="token property-access">test</span><span class="token punctuation">.</span><span class="token method function property-access">beforeEach</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token arrow operator">=&gt;</span> <span class="token punctuation">{</span>
+  testDb<span class="token punctuation">.</span><span class="token method function property-access">exec</span><span class="token punctuation">(</span><span class="token string">"DELETE FROM users"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">const</span> insert <span class="token operator">=</span> testDb<span class="token punctuation">.</span><span class="token method function property-access">prepare</span><span class="token punctuation">(</span>
+    <span class="token string">"INSERT INTO users (name, email) VALUES (?, ?)"</span><span class="token punctuation">,</span>
+  <span class="token punctuation">)</span><span class="token punctuation">;</span>
+  insert<span class="token punctuation">.</span><span class="token method function property-access">run</span><span class="token punctuation">(</span><span class="token string">"Alice"</span><span class="token punctuation">,</span> <span class="token string">"alice@example.com"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  insert<span class="token punctuation">.</span><span class="token method function property-access">run</span><span class="token punctuation">(</span><span class="token string">"Bob"</span><span class="token punctuation">,</span> <span class="token string">"bob@example.com"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Run after each individual test</span>
+<span class="token maybe-class-name">Deno</span><span class="token punctuation">.</span><span class="token property-access">test</span><span class="token punctuation">.</span><span class="token method function property-access">afterEach</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token arrow operator">=&gt;</span> <span class="token punctuation">{</span>
+  <span class="token comment">// Clean up test data</span>
+  testDb<span class="token punctuation">.</span><span class="token method function property-access">exec</span><span class="token punctuation">(</span><span class="token string">"DELETE FROM users"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// Run once after all tests</span>
+<span class="token maybe-class-name">Deno</span><span class="token punctuation">.</span><span class="token property-access">test</span><span class="token punctuation">.</span><span class="token method function property-access">afterAll</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token arrow operator">=&gt;</span> <span class="token punctuation">{</span>
+  testDb<span class="token punctuation">.</span><span class="token method function property-access">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token maybe-class-name">Deno</span><span class="token punctuation">.</span><span class="token method function property-access">test</span><span class="token punctuation">(</span><span class="token string">"should find user by email"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token arrow operator">=&gt;</span> <span class="token punctuation">{</span>
+  <span class="token keyword">const</span> query <span class="token operator">=</span> testDb<span class="token punctuation">.</span><span class="token method function property-access">prepare</span><span class="token punctuation">(</span><span class="token string">"SELECT * FROM users WHERE email = ?"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">const</span> user <span class="token operator">=</span> query<span class="token punctuation">.</span><span class="token method function property-access">get</span><span class="token punctuation">(</span><span class="token string">"alice@example.com"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">assertEquals</span><span class="token punctuation">(</span>user<span class="token operator">?.</span>name<span class="token punctuation">,</span> <span class="token string">"Alice"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token maybe-class-name">Deno</span><span class="token punctuation">.</span><span class="token method function property-access">test</span><span class="token punctuation">(</span><span class="token string">"should create new user"</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token arrow operator">=&gt;</span> <span class="token punctuation">{</span>
+  <span class="token keyword">const</span> insert <span class="token operator">=</span> testDb<span class="token punctuation">.</span><span class="token method function property-access">prepare</span><span class="token punctuation">(</span>
+    <span class="token string">"INSERT INTO users (name, email) VALUES (?, ?)"</span><span class="token punctuation">,</span>
+  <span class="token punctuation">)</span><span class="token punctuation">;</span>
+  insert<span class="token punctuation">.</span><span class="token method function property-access">run</span><span class="token punctuation">(</span><span class="token string">"Charlie"</span><span class="token punctuation">,</span> <span class="token string">"charlie@example.com"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+  <span class="token keyword">const</span> countQuery <span class="token operator">=</span> testDb<span class="token punctuation">.</span><span class="token method function property-access">prepare</span><span class="token punctuation">(</span><span class="token string">"SELECT COUNT(*) as count FROM users"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token keyword">const</span> result <span class="token operator">=</span> countQuery<span class="token punctuation">.</span><span class="token method function property-access">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token function">assertEquals</span><span class="token punctuation">(</span>result<span class="token operator">!</span><span class="token punctuation">.</span><span class="token property-access">count</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 2 from beforeEach + 1 new</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></pre></div><p>For more information, please refer to
+<a href="https://docs.deno.com/api/deno/testing#test-hooks" rel="noopener noreferrer">our <code>deno test</code> documentation</a>.</p>
+<h2 id="websocket-headers">WebSocket headers</h2>
+<p>We’ve extended the WebSocket spec to allow for specifying custom headers when
+initiating a WebSocket connection:</p>
+<div class="highlight highlight-source-ts notranslate"><div class="markdown-code-title">main.ts</div><pre><span class="token keyword">const</span> ws <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name"><span class="token maybe-class-name">WebSocket</span></span><span class="token punctuation">(</span><span class="token string">"wss://api.example.com/socket"</span><span class="token punctuation">,</span> <span class="token punctuation">{</span>
+  headers<span class="token operator">:</span> <span class="token keyword">new</span> <span class="token class-name"><span class="token maybe-class-name">Headers</span></span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+    <span class="token string-property property">"Authorization"</span><span class="token operator">:</span> <span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">Bearer </span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>token<span class="token interpolation-punctuation punctuation">}</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">,</span>
+    <span class="token string-property property">"X-Custom"</span><span class="token operator">:</span> <span class="token string">"value"</span><span class="token punctuation">,</span>
+  <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></pre></div><p>This can be useful in scenarios when you need to authenticate, attach session
+state, or pass metadata right at the handshake stage, without leaking sensitive
+data in the URL or doing extra roundtrips.</p>
+<p><em>Keep in mind that this will not work in browsers.</em></p>
+<h2 id="runtime-api-for-deno-bundle">Runtime API for <code>deno bundle</code></h2>
+<p>In 2.4, <a href="/v2.4#deno-bundle" rel="noopener noreferrer">we re-introduced <code>deno bundle</code></a>, which creates a
+single-file JavaScript file from JavaScript or TypeScript. In this release,
+we’ve added support for a runtime API, allowing you to programmatically bundle
+your client or server side JavaScript or TypeScript.</p>
+<p>For example, you have <code>index.tsx</code>:</p>
+<div class="highlight highlight-source-tsx notranslate"><div class="markdown-code-title">index.tsx</div><pre><span class="token keyword module">import</span> <span class="token imports"><span class="token punctuation">{</span> render <span class="token punctuation">}</span></span> <span class="token keyword module">from</span> <span class="token string">"npm:preact"</span><span class="token punctuation">;</span>
+
+<span class="token keyword module">import</span> <span class="token string">"./styles.css"</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> app <span class="token operator">=</span> <span class="token punctuation">(</span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>div</span><span class="token punctuation">&gt;</span></span><span class="token plain-text">
+    </span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>p</span><span class="token punctuation">&gt;</span></span><span class="token plain-text">Hello World!</span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>p</span><span class="token punctuation">&gt;</span></span><span class="token plain-text">
+  </span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">&gt;</span></span>
+<span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token function">render</span><span class="token punctuation">(</span>app<span class="token punctuation">,</span> <span class="token dom variable">document</span><span class="token punctuation">.</span><span class="token property-access">body</span><span class="token punctuation">)</span><span class="token punctuation">;</span></pre></div><p>You can bundle programmatically with this <code>bundle.ts</code> script:</p>
+<div class="highlight highlight-source-ts notranslate"><div class="markdown-code-title">bundle.ts</div><pre><span class="token keyword">const</span> result <span class="token operator">=</span> <span class="token keyword control-flow">await</span> <span class="token maybe-class-name">Deno</span><span class="token punctuation">.</span><span class="token method function property-access">bundle</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+  entrypoints<span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"./index.tsx"</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  outputDir<span class="token operator">:</span> <span class="token string">"dist"</span><span class="token punctuation">,</span>
+  platform<span class="token operator">:</span> <span class="token string">"browser"</span><span class="token punctuation">,</span>
+  minify<span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token console class-name">console</span><span class="token punctuation">.</span><span class="token method function property-access">log</span><span class="token punctuation">(</span>result<span class="token punctuation">)</span><span class="token punctuation">;</span></pre></div><p>Note that the <a href="https://docs.deno.com/api/deno/~/Deno.bundle" rel="noopener noreferrer"><code>Deno.bundle</code></a> API
+is experimental and must be used with the flag <code>--unstable-bundle</code>.</p>
+<p>For more information about available runtime options and configurations,
+<a href="https://docs.deno.com/runtime/reference/bundling/" rel="noopener noreferrer">please refer to our documentation</a>.</p>
+<h2 id="html-entrypoint-support-in-deno-bundle">HTML entrypoint support in <code>deno bundle</code></h2>
+<p>Previously, <code>deno bundle</code> required a <code>.js</code>/<code>.ts</code>/<code>.jsx</code>/<code>.tsx</code> file as an
+entrypoint. Now with 2.5, it can support HTML files as inputs:</p>
+<div class="highlight highlight-source-bash notranslate"><pre>deno bundle <span class="token parameter variable">--outdir</span> dist index.html</pre></div><p>With this command, <code>deno bundle</code> will find scripts referenced in the HTML file,
+bundle them, and then update the paths in <code>index.html</code> to point to the bundled
+scripts. If your app imports global css (<code>import "./styles.css"</code>), this will be
+bundled and injected into the HTML output as well.</p>
+<p>With the same <code>index.tsx</code> from above, and an HTML file:</p>
+<div class="highlight highlight-source-html notranslate"><div class="markdown-code-title">index.html</div><pre><span class="token doctype"><span class="token punctuation">&lt;!</span><span class="token doctype-tag">DOCTYPE</span> <span class="token name">html</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>html</span> <span class="token attr-name">lang</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>en<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>head</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>meta</span> <span class="token attr-name">charset</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>utf-8<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>title</span><span class="token punctuation">&gt;</span></span>Example<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>title</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>script</span> <span class="token attr-name">src</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>./index.tsx<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>module<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span><span class="token script"></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>script</span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>head</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>html</span><span class="token punctuation">&gt;</span></span></pre></div><p>When you run <code>deno bundle --outdir dist index.html</code>, this is the resulting HTML:</p>
+<div class="highlight highlight-source-html notranslate"><pre><span class="token doctype"><span class="token punctuation">&lt;!</span><span class="token doctype-tag">DOCTYPE</span> <span class="token name">html</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>html</span> <span class="token attr-name">lang</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>en<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>head</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>meta</span> <span class="token attr-name">charset</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>utf-8<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>title</span><span class="token punctuation">&gt;</span></span>Example<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>title</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>script</span> <span class="token attr-name">src</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>./index-2TFDJWLF.js<span class="token punctuation">"</span></span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>module<span class="token punctuation">"</span></span> <span class="token attr-name">crossorigin</span><span class="token punctuation">&gt;</span></span><span class="token script"></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>script</span><span class="token punctuation">&gt;</span></span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>link</span> <span class="token attr-name">rel</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>stylesheet<span class="token punctuation">"</span></span> <span class="token attr-name">crossorigin</span> <span class="token attr-name">href</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>./index-EWSJYQGA.css<span class="token punctuation">"</span></span><span class="token punctuation">&gt;</span></span>
+  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>head</span><span class="token punctuation">&gt;</span></span>
+<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>html</span><span class="token punctuation">&gt;</span></span></pre></div><p>Note that the bundled output includes a hash based on the bundled content, to
+fingerprint this specific bundle.</p>
+<p>HTML inputs are also fully supported in the
+<a href="#runtime-api-for-deno-bundle">runtime API mentioned above</a>.</p>
+<p>While simple and zero-config, this feature overlaps a bit with Vite . In fact,
+<a href="/blog/fresh-and-vite" rel="noopener noreferrer">Fresh recently adopted Vite</a> for its
+development server and build pipeline. Think of it this way:</p>
+<ul>
+<li><code>deno bundle index.html</code> - great for small, static apps where you just want a
+quick packaged build.</li>
+<li>Vite - better for complex projects that benefit the wider Vite ecosystem.</li>
+</ul>
+<p>Both paths run seamlessly on Deno - you can pick whichever fits your workflow
+best.</p>
+<h2 id="permissions-audit-log">Permissions audit log</h2>
+<p>One core aspect of security is having an audit log for accountability, which
+shows who did what, when, and how.</p>
+<p>With 2.5, we’ve added a <code>DENO_AUDIT_PERMISSIONS</code> env var that sets the path for
+a JSONL permission audit log, which contains the permission and value.</p>
+<div class="highlight highlight-source-ts notranslate"><div class="markdown-code-title">main.ts</div><pre><span class="token console class-name">console</span><span class="token punctuation">.</span><span class="token method function property-access">log</span><span class="token punctuation">(</span><span class="token maybe-class-name">Deno</span><span class="token punctuation">.</span><span class="token property-access">env</span><span class="token punctuation">.</span><span class="token method function property-access">get</span><span class="token punctuation">(</span><span class="token string">"FOO"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> content <span class="token operator">=</span> <span class="token keyword control-flow">await</span> <span class="token maybe-class-name">Deno</span><span class="token punctuation">.</span><span class="token method function property-access">readTextFile</span><span class="token punctuation">(</span><span class="token string">"data.csv"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token maybe-class-name">Deno</span><span class="token punctuation">.</span><span class="token method function property-access">writeTextFileSync</span><span class="token punctuation">(</span><span class="token string">"log.txt"</span><span class="token punctuation">,</span> <span class="token string">"..."</span><span class="token punctuation">)</span><span class="token punctuation">;</span></pre></div><div class="highlight highlight-source-bash notranslate"><pre><span class="token assign-left variable">DENO_AUDIT_PERMISSIONS</span><span class="token operator">=</span>./permission.log deno run <span class="token parameter variable">-A</span> main.ts</pre></div><p>Here’s an example of what the audit log might look like:</p>
+<div class="highlight highlight-source-json notranslate"><div class="markdown-code-title">permission.log</div><pre><span class="token punctuation">{</span>
+  <span class="token property">"v"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+  <span class="token property">"datetime"</span><span class="token operator">:</span> <span class="token string">"2025-09-05T12:12:35Z"</span><span class="token punctuation">,</span>
+  <span class="token property">"permission"</span><span class="token operator">:</span> <span class="token string">"env"</span><span class="token punctuation">,</span>
+  <span class="token property">"value"</span><span class="token operator">:</span> <span class="token string">"FOO"</span>
+<span class="token punctuation">}</span>
+<span class="token punctuation">{</span>
+  <span class="token property">"v"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+  <span class="token property">"datetime"</span><span class="token operator">:</span> <span class="token string">"2025-09-05T12:14:18Z"</span><span class="token punctuation">,</span>
+  <span class="token property">"permission"</span><span class="token operator">:</span> <span class="token string">"read"</span><span class="token punctuation">,</span>
+  <span class="token property">"value"</span><span class="token operator">:</span> <span class="token string">"data.csv"</span>
+<span class="token punctuation">}</span>
+<span class="token punctuation">{</span>
+  <span class="token property">"v"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span>
+  <span class="token property">"datetime"</span><span class="token operator">:</span> <span class="token string">"2025-09-05T12:14:26Z"</span><span class="token punctuation">,</span>
+  <span class="token property">"permission"</span><span class="token operator">:</span> <span class="token string">"write"</span><span class="token punctuation">,</span>
+  <span class="token property">"value"</span><span class="token operator">:</span> <span class="token string">"log.txt"</span>
+<span class="token punctuation">}</span></pre></div><p>This can be combined with the env var
+<a href="https://docs.deno.com/runtime/fundamentals/security/#permissions" rel="noopener noreferrer"><code>DENO_TRACE_PERMISSIONS=1</code></a>,
+which will also add the stack trace for permission requests to the audit log.</p>
+<p>For more information, please visit
+<a href="https://docs.deno.com/runtime/fundamentals/security/#permissions" rel="noopener noreferrer">our documentation</a>.</p>
+<h2 id="deno-run-lists-all-tasks-and-scripts"><code>deno run</code> lists all tasks and scripts</h2>
+<p>Previously, <code>deno run</code> with no arguments printed an error, but in 2.5 it will
+output a list of available tasks from <code>deno.json</code> and scripts from
+<code>package.json</code>:</p>
+<div class="highlight highlight-source-bash notranslate"><pre>deno run
+Please specify a <span class="token punctuation">[</span>SCRIPT_ARG<span class="token punctuation">]</span> or a task name.
+
+Available tasks:
+- dev
+    deno run <span class="token parameter variable">-A</span> <span class="token parameter variable">--env</span> <span class="token parameter variable">--watch</span><span class="token operator">=</span>static/,routes/,data/ dev.ts
+- build
+    deno run <span class="token parameter variable">-A</span> dev.ts build
+- db:push <span class="token punctuation">(</span>package.json<span class="token punctuation">)</span>
+    dotenv drizzle-kit push
+- db:generate <span class="token punctuation">(</span>package.json<span class="token punctuation">)</span>
+    dotenv drizzle-kit generate</pre></div><p>This will make it simpler to quickly see what tasks and scripts you can execute
+from the command line.</p>
+<h2 id="simpler-stdio-from-denochildprocess">Simpler stdio from <code>Deno.ChildProcess</code></h2>
+<p>We’ve added convenience methods to <code>stdout</code> and <code>stderr</code> streams in
+<code>Deno.ChildProcess</code>, making it easier to get various output types. For example:</p>
+<div class="highlight highlight-source-ts notranslate"><div class="markdown-code-title">main.ts</div><pre><span class="token keyword">const</span> sub <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name"><span class="token maybe-class-name">Deno</span></span><span class="token punctuation">.</span><span class="token method function property-access"><span class="token maybe-class-name">Command</span></span><span class="token punctuation">(</span><span class="token string">"cat"</span><span class="token punctuation">,</span> <span class="token punctuation">{</span>
+  args<span class="token operator">:</span> <span class="token punctuation">[</span><span class="token string">"hello.txt"</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+  stdout<span class="token operator">:</span> <span class="token string">"piped"</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token method function property-access">spawn</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 2.4 and before</span>
+<span class="token keyword module">import</span> <span class="token imports"><span class="token punctuation">{</span> toText <span class="token punctuation">}</span></span> <span class="token keyword module">from</span> <span class="token string">"jsr:@std/streams/to-text"</span><span class="token punctuation">;</span>
+<span class="token keyword">const</span> stdout <span class="token operator">=</span> <span class="token keyword control-flow">await</span> <span class="token function">toText</span><span class="token punctuation">(</span>sub<span class="token punctuation">.</span><span class="token property-access">stdout</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+<span class="token comment">// 2.5</span>
+<span class="token keyword">const</span> stdout <span class="token operator">=</span> <span class="token keyword control-flow">await</span> sub<span class="token punctuation">.</span><span class="token property-access">stdout</span><span class="token punctuation">.</span><span class="token method function property-access">text</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></pre></div><p>Convenience methods that are now available, match those on
+<a href="https://developer.mozilla.org/en-US/docs/Web/API/Response" rel="noopener noreferrer"><code>Response</code></a>:</p>
+<ul>
+<li><code>Deno.SubprocessReadableStream.arrayBuffer()</code> -&gt; <code>ArrayBuffer</code></li>
+<li><code>Deno.SubprocessReadableStream.bytes()</code> -&gt; <code>Uint8Array</code></li>
+<li><code>Deno.SubprocessReadableStream.json()</code> -&gt; <code>unknown</code></li>
+<li><code>Deno.SubprocessReadableStream.text()</code> -&gt; <code>string</code></li>
+</ul>
+<h2 id="more-consistent-behavior-for-formatting-options">More consistent behavior for formatting options</h2>
+<p>When the <code>spaceSurroundingProperties</code> option is set to false,
+<a href="https://docs.deno.com/runtime/reference/cli/fmt/" rel="noopener noreferrer"><code>deno fmt</code></a> will now also
+apply this to braces in named <code>import</code> and <code>export</code> statements:</p>
+<div class="highlight highlight-source-json notranslate"><div class="markdown-code-title">deno.json</div><pre><span class="token punctuation">{</span>
+  <span class="token property">"fmt"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"spaceSurroundingProperties"</span><span class="token operator">:</span> <span class="token boolean">false</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></pre></div>
+<div class="highlight highlight-source-js notranslate"><pre><span class="token comment">// Old: Spaces preserved in `import` statement.</span>
+<span class="token keyword module">import</span> <span class="token imports"><span class="token punctuation">{</span> foo <span class="token punctuation">}</span></span> <span class="token keyword module">from</span> <span class="token string">"bar"</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> baz <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token literal-property property">a</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">}</span><span class="token punctuation">;</span>
+
+<span class="token comment">// New: Spaces removed.</span>
+<span class="token keyword module">import</span> <span class="token imports"><span class="token punctuation">{</span>foo<span class="token punctuation">}</span></span> <span class="token keyword module">from</span> <span class="token string">"bar"</span><span class="token punctuation">;</span>
+
+<span class="token keyword">const</span> baz <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token literal-property property">a</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">}</span><span class="token punctuation">;</span></pre></div><p>This behavior roughly matches
+<a href="https://eslint.style/rules/object-curly-spacing" rel="noopener noreferrer">that of stylistic’s curly rule</a>.
+Note that this option defaults to <code>true</code>, so users won’t be affected unless they
+have explicitly configured it to <code>false</code>.</p>
+<p>Thank you <a href="https://github.com/mologie" rel="noopener noreferrer">mologie</a> for this contribution!</p>
+<h2 id="dependency-management">Dependency management</h2>
+<p>In 2.5, we’ve introduced several changes to improve dependency management.
+Firstly, we have changed the <code>deno install</code> report format to make it more useful
+when managing dependencies:</p>
+<pre style="background-color: var(--color-gray-5); line-height: 1.6; color: var(--gray-2); whitespace: pre-wrap;"><code style="color: #ffd700;">$ <span style="color: #fff;">deno install</span></code>
+<code>Installed 181 packages in 2093ms</code>
+<code>Reused 161 packages from cache</code>
+<code style="color: #7fff00;">++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++</code>
+<code>Downloaded 10 packages from JSR</code>
+<code style="color: #7fff00;">++++++++++</code>
+<code>Downloaded 86 packages from npm</code>
+<code style="color: #7fff00;">++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++</code>
+
+<code style="color: #4a9eff;">Dependencies:</code>
+<code>+ jsr:@deno/rust-automation 0.21.0</code>
+<code>+ jsr:@denosaurs/emoji 0.3.1</code>
+<code>+ jsr:@fresh/core 2.0.0-alpha.58</code>
+<code>+ jsr:@fresh/plugin-tailwind 0.0.1-alpha.9</code>
+<code>+ jsr:@std/data-structures 1.0.9</code>
+<code>+ jsr:@std/front-matter 1.0.9</code>
+<code>+ jsr:@std/internal 1.0.10</code>
+<code>+ jsr:@std/testing 1.0.15</code>
+<code>+ jsr:@std/toml 1.0.6</code>
+<code>+ jsr:@std/yaml 1.0.9</code>
+<code>+ npm:@algolia/client-search 4.14.3</code>
+<code>+ npm:@algolia/requester-fetch 4.14.3</code>
+<code>+ npm:@maxmind/geoip2-node 5.0.0</code>
+<code>+ npm:@opentelemetry/api 1.9.0</code>
+<code>+ npm:@preact/signals 2.2.1</code>
+…
+</pre>
+
+<p>You now get a quick overview how many direct dependencies were installed, how
+many packages were pulled from a cache as well as how many JSR and npm packages
+were downloaded.</p>
+<p>We have also simplified the warning displayed if an npm package installed with
+<code>deno install</code> requires a build script:</p>
+<pre><code class="notranslate">╭ Warning
+│
+│  Ignored build scripts for packages:
+│  npm:sharp@0.34.3
+│
+╰─ Run "deno install --allow-scripts=npm:sharp@0.34.3" to run build scripts.</code></pre><p><em>We will soon ship a tool that makes management of these build scripts more
+convenient, collaborative and secure.</em></p>
+<h3 id="no-unversioned-import-lint-rule"><code>no-unversioned-import</code> lint rule</h3>
+<p>The
+<a href="https://docs.deno.com/lint/rules/no-unversioned-import" rel="noopener noreferrer"><code>no-unversioned-import</code></a>
+rule requires that all <code>npm:</code> and <code>jsr:</code> import statements include a version
+number. This lint rule is enabled by default.</p>
+<p>While it’s convenient to write <code>import chalk from "npm:chalk"</code> for quick
+hacking, it’s not recommended in production, as Deno will automatically pull the
+latest version of the package. If the package published a breaking change, it
+could cause your code to fail.</p>
+<div class="highlight highlight-source-ts notranslate"><div class="markdown-code-title">main.ts</div><pre><span class="token keyword module">import</span> <span class="token imports">chalk</span> <span class="token keyword module">from</span> <span class="token string">"npm:chalk"</span><span class="token punctuation">;</span></pre></div><div class="highlight highlight-source-bash notranslate"><pre>$ deno lint
+
+error<span class="token punctuation">[</span>no-unversioned-import<span class="token punctuation">]</span>: Missing version <span class="token keyword">in</span> specifier
+ --<span class="token operator">&gt;</span> /dev/main.ts:1:19
+  <span class="token operator">|</span>
+<span class="token number">1</span> <span class="token operator">|</span> <span class="token function">import</span> chalk from <span class="token string">"npm:chalk"</span><span class="token punctuation">;</span>
+  <span class="token operator">|</span>                   ^^^^^^^^^^^
+  <span class="token operator">=</span> hint: Add a version requirement after the package name
+
+  docs: https://docs.deno.com/lint/rules/no-unversioned-import</pre></div><p><em>This rule is part of the <code>recommended</code> set and will be applied automatically if
+you haven’t configured
+<a href="https://docs.deno.com/runtime/reference/cli/lint/" rel="noopener noreferrer"><code>deno lint</code></a>.</em></p>
+<h3 id="no-import-prefix-lint-rule"><code>no-import-prefix</code> lint rule</h3>
+<p>The <a href="https://docs.deno.com/lint/rules/no-import-prefix" rel="noopener noreferrer"><code>no-import-prefix</code></a> rule
+ensures that all dependencies are declared in either <code>deno.json</code> or
+<code>package.json</code> rather than imported directly from URLs or package registries.
+This promotes better dependency management and makes it easier to track and
+update dependencies.</p>
+<div class="highlight highlight-source-json notranslate"><div class="markdown-code-title">deno.json</div><pre><span class="token punctuation">{</span>
+  <span class="token property">"imports"</span><span class="token operator">:</span> <span class="token punctuation">{</span>
+    <span class="token property">"oak"</span><span class="token operator">:</span> <span class="token string">"jsr:@oak/oak@17"</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">}</span></pre></div><div class="highlight highlight-source-ts notranslate"><div class="markdown-code-title">main.ts</div><pre><span class="token keyword module">import</span> <span class="token imports"><span class="token punctuation">{</span> <span class="token maybe-class-name">Application</span> <span class="token punctuation">}</span></span> <span class="token keyword module">from</span> <span class="token string">"oak/application"</span><span class="token punctuation">;</span>
+<span class="token keyword module">import</span> <span class="token imports">chalk</span> <span class="token keyword module">from</span> <span class="token string">"npm:chalk"</span><span class="token punctuation">;</span></pre></div><div class="highlight highlight-source-bash notranslate"><pre>$ deno lint
+
+error<span class="token punctuation">[</span>no-import-prefix<span class="token punctuation">]</span>: Inline <span class="token string">'npm:'</span>, <span class="token string">'jsr:'</span> or <span class="token string">'https:'</span> dependency not allowed
+ --<span class="token operator">&gt;</span> /dev/main.ts:2:19
+  <span class="token operator">|</span>
+<span class="token number">2</span> <span class="token operator">|</span> <span class="token function">import</span> chalk from <span class="token string">"npm:chalk"</span><span class="token punctuation">;</span>
+  <span class="token operator">|</span>                   ^^^^^^^^^^^
+  <span class="token operator">=</span> hint: Add it as a dependency <span class="token keyword">in</span> a deno.json or package.json instead and reference it here via its bare specifier
+
+  docs: https://docs.deno.com/lint/rules/no-import-prefix</pre></div><p><em>This rule is part of the new <code>workspace</code> set and will be applied automatically
+if there’s <code>deno.json</code> or <code>package.json</code> discovered.</em></p>
+<h2 id="nodejs-settimeout-and-setinterval-with---unstable-node-globals">Node.js <code>setTimeout</code> and <code>setInterval</code> with <code>--unstable-node-globals</code></h2>
+<p>This release brings back <code>--unstable-node-globals</code> flag that makes Deno use
+Node.js flavor of <code>setTimeout</code>, <code>setInterval</code>, <code>clearTimeout</code>, and
+<code>clearInterval</code> API.</p>
+<p>For context, Deno has always used Web version of these APIs. The change is
+subtle - the Web APIs return and accept numbers (timer ID), but Node.js APIs
+return and accept <code>Timer</code> object.</p>
+<p>Some npm libraries rely on <code>Timer.ref()</code> or <code>Timer.unref()</code> APIs that have
+equivalent <code>Deno.refTimer()</code> and <code>Deno.unrefTimer()</code>, but over the years we
+noticed that this situation leads to more confusion rather than simplification
+of developers’ lives.</p>
+<p>So starting with Deno v2.5 you can use
+<a href="https://docs.deno.com/runtime/reference/cli/unstable_flags/#--unstable-node-globals" rel="noopener noreferrer"><code>--unstable-node-globals</code></a>
+flag, or <a href="/blog/v2.4#deno_compat1" rel="noopener noreferrer"><code>DENO_COMPAT=1</code> env var</a> to tell Deno to
+prefer using Node.js timer APIs.</p>
+<p>We plan to change used APIs to be Node.js version in Deno 3. For most users
+there will be no changes required to adjust to the new APIs.</p>
+<h2 id="--watch-environment-variables-with---env-file"><code>--watch</code> environment variables with <code>--env-file</code></h2>
+<p>When using
+<a href="https://docs.deno.com/runtime/getting_started/command_line_interface/#watch-mode" rel="noopener noreferrer"><code>--watch</code></a>
+and
+<a href="https://docs.deno.com/runtime/reference/env_variables/#.env-file" rel="noopener noreferrer"><code>--env-file</code></a>
+flag, Deno will automatically reload environment variables when your environment
+file is updated.</p>
+<p>Thank you <a href="https://github.com/meetdhanani17" rel="noopener noreferrer">meetdhanani17</a> for this
+contribution!</p>
+<h2 id="set-tcp-backlog-size-to-denoserve">Set TCP backlog size to <code>Deno.serve</code></h2>
+<p><a href="https://docs.deno.com/runtime/fundamentals/http_server/" rel="noopener noreferrer"><code>Deno.serve</code></a> is a
+one-line, dead simple way to build an HTTP server. However, previously, there
+wasn’t an easy way to set the backlog size (the maximum number of pending TCP
+connections to queue for your listener), which is useful if you’re expecting
+huge bursts of traffic.</p>
+<p>In 2.5, we’ve added a new argument, <code>tcpBacklog</code>, letting you explicitly set the
+maximum number of queued incoming connections that can used with
+<code>Deno.listen{Tls}</code> and <code>Deno.serve</code>:</p>
+<div class="highlight highlight-source-ts notranslate"><div class="markdown-code-title">server.ts</div><pre><span class="token maybe-class-name">Deno</span><span class="token punctuation">.</span><span class="token method function property-access">serve</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+  port<span class="token operator">:</span> <span class="token number">4600</span><span class="token punctuation">,</span>
+  tcpBacklog<span class="token operator">:</span> <span class="token number">4096</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>_req<span class="token punctuation">)</span> <span class="token arrow operator">=&gt;</span> <span class="token keyword">new</span> <span class="token class-name"><span class="token maybe-class-name">Response</span></span><span class="token punctuation">(</span><span class="token string">"hello"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></pre></div><p>The default TCP backlog has been increased to 511, which is a default used by
+many high performance servers.</p>
+<h2 id="tsconfig-compatibility-for-frameworks">TSConfig compatibility for frameworks</h2>
+<p>Deno 2.4
+<a href="/blog/v2.4#better-tsconfigjson-support" rel="noopener noreferrer">expanded its <code>tsconfig.json</code> compatibility</a>
+with a focus on allowing Vite-configured projects to type-check with
+<code>deno check</code> out-of-the-box. Previously, these would have required a well-versed
+user to convert the configuration so the Deno CLI and
+<a href="https://docs.deno.com/runtime/reference/lsp_integration/" rel="noopener noreferrer">LSP</a> would work.</p>
+<p>Deno 2.5 adds support for
+<a href="https://github.com/denoland/deno/pull/30495" rel="noopener noreferrer"><code>compilerOptions.rootDirs</code></a> and
+the <a href="https://github.com/denoland/deno/pull/30603" rel="noopener noreferrer"><code>"bundler"</code></a> option for
+<code>compilerOptions.moduleResolution</code>, fixing type-checking for the following
+project templates:</p>
+<ul>
+<li><strong>SvelteKit</strong>: <a href="https://svelte.dev/docs/cli/sv-create" rel="noopener noreferrer"><code>npx sv create</code></a></li>
+<li><strong>Next.js</strong>:
+<a href="https://nextjs.org/docs/app/api-reference/cli/create-next-app" rel="noopener noreferrer"><code>npx create-next-app</code></a></li>
+</ul>
+<p>You can try these out by creating a basic application from one of these commands
+as you would with Node.js, adding a <code>deno.json</code> file with content <code>{}</code> to enable
+the LSP and running the <code>deno check</code> command. Ensure the Deno extension is
+installed.</p>
+<p>We aim for comprehensive TypeScript/<code>tsconfig.json</code> compatibility with modern
+Node.js projects. Please continue reporting any discovered incompatibility using
+our <a href="https://github.com/denoland/deno/issues" rel="noopener noreferrer">issue tracker</a>!</p>
+<h2 id="performance-improvements">Performance improvements</h2>
+<p><strong>Emit cache optimization</strong>: Deno now only clears its emit cache when the
+underlying <code>deno_ast</code> version changes, rather than on every update,
+significantly reducing unnecessary recompilation overhead.</p>
+<p><strong>CommonJS wrapper efficiency</strong>: Memory usage and heap allocations have been
+reduced when creating CommonJS wrapper modules, making Node.js compatibility
+more efficient.</p>
+<p><strong>Conditional JSX transpilation</strong>: JSX transpilation is now skipped entirely
+when JSX is disabled, avoiding unnecessary processing overhead for projects that
+don’t use JSX.</p>
+<p><strong>Improved <code>structuredClone</code></strong>: The <code>structuredClone</code> API now uses more
+efficient internal implementations, speeding up object cloning operations.</p>
+<p><strong><code>Buffer</code> method optimizations</strong>: The <code>Buffer.subarray</code> and
+<code>Buffer.prototype.utf8Slice</code> methods have been optimized for better performance
+when working with binary data.</p>
+<p><strong>Node-API optimizations</strong>: Various Node.js API compatibility layer
+optimizations reduce overhead when using native Node.js modules.</p>
+<h2 id="other-features">Other features</h2>
+<p><strong>Disable hostname verification in TLS connections</strong>: For development and
+testing scenarios, you can now disable hostname verification in TLS connections,
+providing more flexibility when working with self-signed certificates or
+non-standard certificate configurations.
+(<a href="https://github.com/denoland/deno/pull/30409" rel="noopener noreferrer">#30409</a>)</p>
+<p><strong>Unix socket and vsock proxy support via environment variable</strong>: You can now
+enable parsing Unix socket and vsock proxies for the <code>fetch</code> API with
+environment variables. (<a href="https://github.com/denoland/deno/pull/30377" rel="noopener noreferrer">#30377</a>)</p>
+<p><strong>Pull-based diagnostics in LSP</strong>: The Language Server Protocol implementation
+now uses pull-based diagnostics, improving performance and responsiveness when
+working with large codebases in your editor.
+(<a href="https://github.com/denoland/deno/pull/30325" rel="noopener noreferrer">#30325</a>)</p>
+<p><strong>Enhanced Node.js async hooks</strong>: Improved Node.js compatibility with async
+hooks implementation for <code>nextTick</code> TickObject tracking, making it easier to
+migrate existing Node.js applications that rely on this functionality.
+(<a href="https://github.com/denoland/deno/pull/30578" rel="noopener noreferrer">#30578</a>)</p>
+<p><strong>Bundle dependencies support</strong>: npm packages that use <code>bundleDependencies</code> in
+their <code>package.json</code> are now fully supported, expanding compatibility with the
+broader npm ecosystem. (<a href="https://github.com/denoland/deno/pull/30521" rel="noopener noreferrer">#30521</a>)</p>
+<p><strong>Vsock transport for telemetry</strong>: OpenTelemetry now supports vsock transport,
+enabling telemetry data collection in specialized virtualized environments and
+improving observability options.
+(<a href="https://github.com/denoland/deno/pull/30001" rel="noopener noreferrer">#30001</a>)</p>
+<h2 id="v8-140-and-typescript-592">V8 14.0 and TypeScript 5.9.2</h2>
+<p>Deno 2.5 upgrades to V8 14.0 and
+<a href="https://devblogs.microsoft.com/typescript/announcing-typescript-5-9/" rel="noopener noreferrer">TypeScript 5.9.2</a>
+bringing new language features and performance improvements.</p>
+<p>This release includes a big overhaul of
+<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal" rel="noopener noreferrer">the <code>Temporal</code> API</a>.
+As the implementation of this API matures across JavaScript engines, our hopes
+are that we can soon remove <code>--unstable-temporal</code> flag.</p>
+<h2 id="acknowledgments">Acknowledgments</h2>
+<p>We couldn’t build Deno without the help of our community! Whether by answering
+questions in our
+community <a href="https://discord.gg/deno" rel="noopener noreferrer">Discord server</a> or <a href="https://github.com/denoland/deno/issues" rel="noopener noreferrer">reporting bugs</a>,
+we are incredibly grateful for your support. In particular, we’d like to thank
+the following people for their contributions to Deno 2.5: 林炳权, Alex Yang,
+Asher Gomez, cions, ctrl+d, Daniel Osvaldo Rahmanto, EdamAmex, Edilson
+Pateguana, Garret Thompson, gerald, James Bronder, João Victor Lopes, Kendell R,
+Kenta Moriuchi, Kingsword, Krhougs, Kumbham Ajay Goud, Laurence Rowe, Lucas
+Vieira, Luke Swithenbank, Meet Dhanani, Oliver Kuckertz, Ruyut, sgasho, and ud2.</p>
+<p>Would you like to join the ranks of Deno
+contributors? <a href="https://docs.deno.com/runtime/manual/references/contributing" rel="noopener noreferrer">Check out our contribution docs here</a>,
+and we’ll see you on the list next time.</p>
+<p>Believe it or not, the changes listed above still don’t tell you everything that
+got better in 2.5. You can view
+the <a href="https://github.com/denoland/deno/releases/tag/v2.5.0" rel="noopener noreferrer">full list of pull requests merged in Deno 2.5 on GitHub</a>.</p>
+<p>Thank you for catching up with our 2.5 release, and we hope you love building
+with Deno!</p>
+<blockquote>
+<p><strong>🚨️ <a href="/deploy" rel="noopener noreferrer">There have been major updates to Deno Deploy!</a> 🚨️</strong></p>
+<ul>
+<li><a href="https://docs.deno.com/deploy/early-access/reference/databases/" rel="noopener noreferrer">Database connections and data explorer right in the UI</a></li>
+<li><a href="https://docs.deno.com/deploy/early-access/reference/cloud-connections/" rel="noopener noreferrer">Connect to AWS and GCP via Cloud Connections</a></li>
+<li><a href="https://docs.deno.com/deploy/early-access/reference/observability/" rel="noopener noreferrer">Automatic and immediate observability and telemetry</a></li>
+</ul>
+<p>and <a href="https://docs.deno.com/deploy/early-access/changelog/" rel="noopener noreferrer">much more!</a></p>
+<p><a href="/deploy" rel="noopener noreferrer">Get early access today.</a></p>
+</blockquote>
+</div></article></div><table><tr><th colspan="2">Metadata</th></tr><tr><td>Title</td><td>Deno 2.5: Permissions in the config file | Deno</td></tr><tr><td>Description</td><td>Simpler permission management with permission sets, new Deno.test APIs for setting up and tearing down test cases, specifying custom headers in WebSocket connections, runtime APIs in deno bundle, and more.</td></tr><tr><td>Image</td><td><img src="http://localhost:3001/blog/v2.5/og.webp" alt="Deno 2.5: Permissions in the config file | Deno"></td></tr><tr><td>Date</td><td>September 10, 2025</td></tr><tr><td>Author</td><td>Bartek Iwańczuk, Andy Jiang</td></tr><tr><td>Tags</td><td>Product Update</td></tr></table></main></html>

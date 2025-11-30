@@ -1,0 +1,98 @@
+<html><head></head><main tabindex="-1" id="main"><div class="mx-auto px-4 pb-16 pt-8 md:pt-16 max-w-screen-md"><article class=""><div class=""><h1 class="blog-header text-4xl font-bold text-gray-800 sm:text-6xl col-span-7">Fresh 2.0 Graduates to Beta, Adds Vite Support</h1></div><div class="markdown-body pb-16"><p>After 63 alpha releases, Fresh 2.0 is graduating to beta. These betas are
+effectively release candidates — the architecture is now stable, and the last
+big change has landed.</p>
+<p>That change is Vite integration. With the new
+<a href="https://jsr.io/@fresh/plugin-vite" rel="noopener noreferrer">plugin</a>, Fresh can now optionally run as a
+Vite plugin, giving developers access to hot module reloading, the full Vite
+plugin ecosystem, and modern tooling for both client and server code — all while
+remaining fully usable without Vite.</p>
+<div class="highlight highlight-source-tsx notranslate"><pre><span class="token keyword module">import</span> <span class="token imports"><span class="token punctuation">{</span> defineConfig <span class="token punctuation">}</span></span> <span class="token keyword module">from</span> <span class="token string">"vite"</span><span class="token punctuation">;</span>
+<span class="token keyword module">import</span> <span class="token imports"><span class="token punctuation">{</span> fresh <span class="token punctuation">}</span></span> <span class="token keyword module">from</span> <span class="token string">"@fresh/plugin-vite"</span><span class="token punctuation">;</span>
+
+<span class="token keyword module">export</span> <span class="token keyword module">default</span> <span class="token function">defineConfig</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+  plugins<span class="token operator">:</span> <span class="token punctuation">[</span><span class="token function">fresh</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></pre></div><p>The Fresh Vite plugin fully embraces Vite’s new
+<a href="https://vite.dev/guide/api-environment" rel="noopener noreferrer">Environment API</a> to leverage the power
+of the plugin ecosystem for both server code and client code. For configuration
+details, see the <a href="https://fresh.deno.dev/docs/advanced/vite" rel="noopener noreferrer">Fresh docs</a>.</p>
+<h2 id="hot-module-reloading-in-islands">Hot module reloading in islands</h2>
+<p>With Vite providing access to the underlying module graph of each environment,
+we can now provide proper hot module reloading (“HMR”) support. Instead of
+reloading the page and losing all state, HMR allows UI elements to be swapped
+out whilst keeping the current page alive. Right now, this is scoped to island
+code and server-only changes will still reload the page.</p>
+<figure>
+
+<p><video class="w-full" alt="Demo of HMR working in islands" autoplay="" muted="" loop="" playsinline="" controls="" src="/blog/fresh-and-vite/fresh-vite-hmr.mp4"></video></p>
+</figure>
+
+<h2 id="10x-faster-boot-times">10x faster boot times</h2>
+<p>A lot of care has been spent on making the production output as efficient as
+possible. In Fresh 2, routes are now loaded on demand — only the code needed to
+handle a request is loaded and executed. With the Vite plugin, we’re going a
+step further and will bundle the server code to reduce the number of files that
+need to be resolved and loaded.</p>
+<p>As a result, starting a Fresh app in production is an order-of-magnitude faster.
+In our projects, we’ve seen boot times improve by <strong>9–12×</strong>, depending on
+project size. We measure this from the moment the process starts until the app
+is ready to handle requests. That time usually includes resolving files, loading
+and instantiating modules, and other work done by the JavaScript engine.</p>
+<p>Here are the boot numbers for the Fresh website:</p>
+<ul>
+<li>Before:&nbsp;<code>86ms</code></li>
+<li>After:&nbsp;<code>8ms</code></li>
+</ul>
+<h2 id="out-of-the-box-react-aliasing">Out of the box <code>react</code> aliasing</h2>
+<p>Aliasing <code>react</code>, <code>react-dom</code> and other packages to <code>preact/compat</code> has always
+been a bit tricky. This mapping often needed to be manually specified, and
+required app code to use <code>esm.sh</code> instead of pulling dependencies directly from
+<code>npm</code>. Having to be conscious about this was never an ideal setup.</p>
+<p>With our Vite plugin, this will be taken care of for you. Install third party
+npm packages as usual and never run into aliasing issues again!</p>
+<h2 id="the-head-component-is-back">The <code>&lt;Head&gt;</code> component is back!</h2>
+<p>The beloved <a href="https://fresh.deno.dev/docs/examples/modifying-the-head" rel="noopener noreferrer"><code>&lt;Head&gt;</code></a>
+component from Fresh 1.x is back again! It can be used from components to render
+elements into the <code>&lt;head&gt;</code> portion of an HTML document.</p>
+<div class="highlight highlight-source-tsx notranslate"><pre><span class="token keyword module">export</span> <span class="token keyword module">default</span> <span class="token keyword">function</span> <span class="token function"><span class="token maybe-class-name">Page</span></span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
+  <span class="token keyword control-flow">return</span> <span class="token punctuation">(</span>
+    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>div</span><span class="token punctuation">&gt;</span></span><span class="token plain-text">
+      </span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span><span class="token class-name">Head</span></span><span class="token punctuation">&gt;</span></span><span class="token plain-text">
+        </span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>title</span><span class="token punctuation">&gt;</span></span><span class="token plain-text">About me</span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>title</span><span class="token punctuation">&gt;</span></span><span class="token plain-text">
+      </span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span><span class="token class-name">Head</span></span><span class="token punctuation">&gt;</span></span><span class="token plain-text">
+      </span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>h1</span><span class="token punctuation">&gt;</span></span><span class="token plain-text">About me</span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>h1</span><span class="token punctuation">&gt;</span></span><span class="token plain-text">
+      </span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>p</span><span class="token punctuation">&gt;</span></span><span class="token plain-text">some text about me...</span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>p</span><span class="token punctuation">&gt;</span></span><span class="token plain-text">
+    </span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>div</span><span class="token punctuation">&gt;</span></span>
+  <span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token punctuation">}</span></pre></div><p>This feature isn’t tied to the Vite integration — you can already use it today
+in a Fresh 2 app. We had removed it in 1.x because the implementation was messy
+and hurt rendering performance. But with Fresh 2’s cleaner architecture and the
+chance to explore different approaches, we’ve landed on a much simpler, more
+efficient solution.</p>
+<h2 id="try-it-out">Try it out!</h2>
+<p>You can try out the Vite plugin today by running:</p>
+<div class="highlight highlight-source-sh notranslate"><pre>deno run <span class="token parameter variable">-Ar</span> jsr:@fresh/init</pre></div><p>This will guide you through setting up a simple Fresh app that’s ready to be
+used with Vite. Let us know if you run into
+<a href="https://github.com/denoland/fresh/issues" rel="noopener noreferrer">any issues</a>!</p>
+<p>Already using Fresh 1.x? The updated
+<a href="https://fresh.deno.dev/docs/examples/migration-guide" rel="noopener noreferrer">migration guide</a> walks
+you through upgrading to Fresh 2.0 step by step.</p>
+<p>Also check out the
+<a href="https://fresh.deno.dev/docs/deployment/cloudflare-workers" rel="noopener noreferrer">new guide on deploying to Cloudflare
+Workers</a>, if that’s
+your preference.</p>
+<br>
+<br>
+<br>
+<br>
+
+<blockquote>
+<p><strong>🚨️ <a href="/deploy" rel="noopener noreferrer">There have been major updates to Deno Deploy!</a> 🚨️</strong></p>
+<ul>
+<li><a href="https://www.youtube.com/watch?v=fRFqZsBivCo" rel="noopener noreferrer">Improved Playgrounds with livestreaming logs, traces, and templates like Next.js</a></li>
+<li><a href="https://www.youtube.com/watch?v=PwDU8yTZmUM" rel="noopener noreferrer">Automatic and immediate observability and telemetry</a></li>
+<li><a href="https://x.com/deno_land/status/1935625197295739103" rel="noopener noreferrer">Simpler management for environment variables</a></li>
+</ul>
+<p>and <a href="https://docs.deno.com/deploy/early-access/changelog/" rel="noopener noreferrer">much more!</a></p>
+<p><a href="/deploy" rel="noopener noreferrer">Get early access today.</a></p>
+</blockquote>
+</div></article></div><table><tr><th colspan="2">Metadata</th></tr><tr><td>Title</td><td>Fresh 2.0 Graduates to Beta, Adds Vite Support | Deno</td></tr><tr><td>Description</td><td>Fresh 2.0 beta introduces optional Vite integration - with hot reloading, faster boot times, seamless React aliasing, and the full Vite plugin ecosystem</td></tr><tr><td>Image</td><td><img src="http://localhost:3001/blog/fresh-and-vite/og.png" alt="Fresh 2.0 Graduates to Beta, Adds Vite Support | Deno"></td></tr><tr><td>Date</td><td>September 2, 2025</td></tr><tr><td>Author</td><td>Marvin Hagemeister</td></tr><tr><td>Tags</td><td>Product Update, Fresh</td></tr></table></main></html>

@@ -1,0 +1,473 @@
+<body><main><div><p><img src="http://localhost:3001/blog/v2.5/og.webp" alt="Deno 2.5"></p>
+<h1 id="deno-25-permissions-in-the-config-file">Deno 2.5: Permissions in the config file</h1>
+<p>To upgrade to Deno 2.5, run the following in your terminal:</p>
+<pre><code>deno upgrade
+</code></pre>
+<p>If Deno is not yet installed, run one of the following commands to install or <a href="https://docs.deno.com/runtime/manual/getting_started/installation">learn how to install it here</a>.</p>
+<pre><code># Using Shell (macOS and Linux):
+curl -fsSL https://deno.land/install.sh | sh
+
+# Using PowerShell (Windows):
+iwr https://deno.land/install.ps1 -useb | iex
+</code></pre>
+<h2 id="whats-new-in-deno-25">What’s new in Deno 2.5</h2>
+<ul>
+<li><a href="#permission-sets-in-config">Permission sets in config</a></li>
+<li><a href="#setup-and-teardown-apis-to-denotest">Setup and teardown APIs to <code>Deno.test</code></a></li>
+<li><a href="#websocket-headers">WebSocket headers</a></li>
+<li><a href="#runtime-api-for-deno-bundle">Runtime API for <code>deno bundle</code></a></li>
+<li><a href="#html-entrypoint-support-in-deno-bundle">HTML entrypoint support in <code>deno bundle</code></a></li>
+<li><a href="#permissions-audit-log">Permissions audit log</a></li>
+<li><a href="#deno-run-lists-all-tasks-and-scripts"><code>deno run</code> lists all tasks and scripts</a></li>
+<li><a href="#simpler-stdio-from-denochildprocess">Simpler stdio from <code>Deno.ChildProcess</code></a></li>
+<li><a href="#more-consistent-behavior-for-formatting-options">More consistent behavior for formatting options</a></li>
+<li><a href="#dependency-management">Dependency management</a></li>
+<li><a href="#nodejs-settimeout-and-setinterval-with---unstable-node-globals">Node.js <code>setTimeout</code> and <code>setInterval</code> with <code>--unstable-node-globals</code></a></li>
+<li><a href="#--watch-environment-variables-with---env-file"><code>--watch</code> environment variables with <code>--env-file</code></a></li>
+<li><a href="#set-tcp-backlog-size-to-denoserve">Set TCP backlog size to <code>Deno.serve</code></a></li>
+<li><a href="#tsconfig-compatibility-for-frameworks">TSConfig compatibility for frameworks</a></li>
+<li><a href="#performance-improvements">Performance improvements</a></li>
+<li><a href="#other-features">Other features</a></li>
+<li><a href="#v8-140-and-typescript-592">V8 14.0 and TypeScript 5.9.2</a></li>
+<li><a href="#acknowledgments">Acknowledgments</a></li>
+</ul>
+<h2 id="permission-sets-in-config">Permission sets in config</h2>
+<p>Oftentimes, granular permissions vary depending on context and subcommand: you may run <code>deno main.ts</code> with a certain set of permissions that differ from <code>deno test</code> or <code>deno compile</code>.</p>
+<p>To simplify managing permissions in these scenarios, we have added permission sets that you can set in your <code>deno.json</code> config file:</p>
+<p>deno.json</p>
+<pre><code>{
+  "permissions": {
+    "process-data": {
+      "read": ["./data"],
+      "write": ["./data"]
+    }
+    // ...more permissions can be defined here by name...
+  },
+  "tasks": {
+    "dev": "deno run -P=process-data main.ts"
+  }
+}
+</code></pre>
+<p>That way, you can run a command with pre-defined permission flags:</p>
+<pre><code># Long
+deno run --permission-set=process-data main.ts
+
+# Short
+deno run -P=process-data main.ts
+</code></pre>
+<p>You can also set a <code>default</code> permission set, which can be used with <code>-P</code> with no argument:</p>
+<p>deno.json</p>
+<pre><code>{
+  "permissions": {
+    "default": {
+      "read": ["./deno.json"],
+      "env": true,
+      "run": {
+        "allow": ["git"]
+      }
+    }
+  },
+  "tasks": {
+    "dev": "deno run -P main.ts"
+  }
+}
+</code></pre>
+<p>Permissions can also be optionally specified within the <code>test</code>, <code>bench</code>, or <code>compile</code> keys:</p>
+<p>deno.json</p>
+<pre><code>{
+  "test": {
+    "permissions": {
+      "read": ["./data"]
+    }
+  }
+}
+</code></pre>
+<p>When defined this way, you must pass the permission flag <code>-P</code> when running <code>deno test</code>, or you’ll receive an error:</p>
+<pre><code>> deno test
+error: Test permissions were found in the config file. Did you mean to run with `-P`?
+    at file:///Users/david/dev/scratch2/package-a/deno.json
+> deno test -P
+...runs...
+> deno test --allow-read
+...runs...
+> deno test -A
+...runs...
+</code></pre>
+<p>For more information, please refer to <a href="https://docs.deno.com/runtime/fundamentals/configuration#permissions">our documentation</a>.</p>
+<h2 id="setup-and-teardown-apis-to-denotest">Setup and teardown APIs to <code>Deno.test</code></h2>
+<p>To make testing easier, we’ve added these new APIs to <a href="https://docs.deno.com/runtime/fundamentals/testing/"><code>Deno.test</code></a> to help perform setup and teardown for test cases:</p>
+<ul>
+<li><code>Deno.test.beforeAll</code></li>
+<li><code>Deno.test.beforeEach</code></li>
+<li><code>Deno.test.afterAll</code></li>
+<li><code>Deno.test.afterEach</code></li>
+</ul>
+<p>Here’s a concrete example showing how to set up a test database:</p>
+<p>test.ts</p>
+<pre><code>import sqlite from "node:sqlite";
+import { assertEquals } from "jsr:@std/assert";
+
+let testDb: sqlite.DatabaseSync;
+
+// Run once before all tests
+Deno.test.beforeAll(() => {
+  testDb = new sqlite.DatabaseSync(":memory:");
+  testDb.exec(`CREATE TABLE users (
+      id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE
+    );
+  `);
+});
+
+// Run before each individual test
+Deno.test.beforeEach(() => {
+  testDb.exec("DELETE FROM users");
+  const insert = testDb.prepare(
+    "INSERT INTO users (name, email) VALUES (?, ?)",
+  );
+  insert.run("Alice", "alice@example.com");
+  insert.run("Bob", "bob@example.com");
+});
+
+// Run after each individual test
+Deno.test.afterEach(() => {
+  // Clean up test data
+  testDb.exec("DELETE FROM users");
+});
+
+// Run once after all tests
+Deno.test.afterAll(() => {
+  testDb.close();
+});
+
+Deno.test("should find user by email", () => {
+  const query = testDb.prepare("SELECT * FROM users WHERE email = ?");
+  const user = query.get("alice@example.com");
+  assertEquals(user?.name, "Alice");
+});
+
+Deno.test("should create new user", () => {
+  const insert = testDb.prepare(
+    "INSERT INTO users (name, email) VALUES (?, ?)",
+  );
+  insert.run("Charlie", "charlie@example.com");
+
+  const countQuery = testDb.prepare("SELECT COUNT(*) as count FROM users");
+  const result = countQuery.get();
+  assertEquals(result!.count, 3); // 2 from beforeEach + 1 new
+});
+</code></pre>
+<p>For more information, please refer to <a href="https://docs.deno.com/api/deno/testing#test-hooks">our <code>deno test</code> documentation</a>.</p>
+<h2 id="websocket-headers">WebSocket headers</h2>
+<p>We’ve extended the WebSocket spec to allow for specifying custom headers when initiating a WebSocket connection:</p>
+<p>main.ts</p>
+<pre><code>const ws = new WebSocket("wss://api.example.com/socket", {
+  headers: new Headers({
+    "Authorization": `Bearer ${token}`,
+    "X-Custom": "value",
+  }),
+});
+</code></pre>
+<p>This can be useful in scenarios when you need to authenticate, attach session state, or pass metadata right at the handshake stage, without leaking sensitive data in the URL or doing extra roundtrips.</p>
+<p><em>Keep in mind that this will not work in browsers.</em></p>
+<h2 id="runtime-api-for-deno-bundle">Runtime API for <code>deno bundle</code></h2>
+<p>In 2.4, <a href="/v2.4#deno-bundle">we re-introduced <code>deno bundle</code></a>, which creates a single-file JavaScript file from JavaScript or TypeScript. In this release, we’ve added support for a runtime API, allowing you to programmatically bundle your client or server side JavaScript or TypeScript.</p>
+<p>For example, you have <code>index.tsx</code>:</p>
+<p>index.tsx</p>
+<pre><code>import { render } from "npm:preact";
+
+import "./styles.css";
+
+const app = (
+  &#x3C;div>
+    &#x3C;p>Hello World!&#x3C;/p>
+  &#x3C;/div>
+);
+
+render(app, document.body);
+</code></pre>
+<p>You can bundle programmatically with this <code>bundle.ts</code> script:</p>
+<p>bundle.ts</p>
+<pre><code>const result = await Deno.bundle({
+  entrypoints: ["./index.tsx"],
+  outputDir: "dist",
+  platform: "browser",
+  minify: true,
+});
+console.log(result);
+</code></pre>
+<p>Note that the <a href="https://docs.deno.com/api/deno/~/Deno.bundle"><code>Deno.bundle</code></a> API is experimental and must be used with the flag <code>--unstable-bundle</code>.</p>
+<p>For more information about available runtime options and configurations, <a href="https://docs.deno.com/runtime/reference/bundling/">please refer to our documentation</a>.</p>
+<h2 id="html-entrypoint-support-in-deno-bundle">HTML entrypoint support in <code>deno bundle</code></h2>
+<p>Previously, <code>deno bundle</code> required a <code>.js</code>/<code>.ts</code>/<code>.jsx</code>/<code>.tsx</code> file as an entrypoint. Now with 2.5, it can support HTML files as inputs:</p>
+<pre><code>deno bundle --outdir dist index.html
+</code></pre>
+<p>With this command, <code>deno bundle</code> will find scripts referenced in the HTML file, bundle them, and then update the paths in <code>index.html</code> to point to the bundled scripts. If your app imports global css (<code>import "./styles.css"</code>), this will be bundled and injected into the HTML output as well.</p>
+<p>With the same <code>index.tsx</code> from above, and an HTML file:</p>
+<p>index.html</p>
+<pre><code>&#x3C;!DOCTYPE html>
+&#x3C;html lang="en">
+  &#x3C;head>
+    &#x3C;meta charset="utf-8">
+    &#x3C;title>Example&#x3C;/title>
+    &#x3C;script src="./index.tsx" type="module">&#x3C;/script>
+  &#x3C;/head>
+&#x3C;/html>
+</code></pre>
+<p>When you run <code>deno bundle --outdir dist index.html</code>, this is the resulting HTML:</p>
+<pre><code>&#x3C;!DOCTYPE html>
+&#x3C;html lang="en">
+  &#x3C;head>
+    &#x3C;meta charset="utf-8">
+    &#x3C;title>Example&#x3C;/title>
+    &#x3C;script src="./index-2TFDJWLF.js" type="module" crossorigin>&#x3C;/script>
+    &#x3C;link rel="stylesheet" crossorigin href="./index-EWSJYQGA.css">
+  &#x3C;/head>
+&#x3C;/html>
+</code></pre>
+<p>Note that the bundled output includes a hash based on the bundled content, to fingerprint this specific bundle.</p>
+<p>HTML inputs are also fully supported in the <a href="#runtime-api-for-deno-bundle">runtime API mentioned above</a>.</p>
+<p>While simple and zero-config, this feature overlaps a bit with Vite . In fact, <a href="/blog/fresh-and-vite">Fresh recently adopted Vite</a> for its development server and build pipeline. Think of it this way:</p>
+<ul>
+<li><code>deno bundle index.html</code> - great for small, static apps where you just want a quick packaged build.</li>
+<li>Vite - better for complex projects that benefit the wider Vite ecosystem.</li>
+</ul>
+<p>Both paths run seamlessly on Deno - you can pick whichever fits your workflow best.</p>
+<h2 id="permissions-audit-log">Permissions audit log</h2>
+<p>One core aspect of security is having an audit log for accountability, which shows who did what, when, and how.</p>
+<p>With 2.5, we’ve added a <code>DENO_AUDIT_PERMISSIONS</code> env var that sets the path for a JSONL permission audit log, which contains the permission and value.</p>
+<p>main.ts</p>
+<pre><code>console.log(Deno.env.get("FOO"));
+const content = await Deno.readTextFile("data.csv");
+Deno.writeTextFileSync("log.txt", "...");
+</code></pre>
+<pre><code>DENO_AUDIT_PERMISSIONS=./permission.log deno run -A main.ts
+</code></pre>
+<p>Here’s an example of what the audit log might look like:</p>
+<p>permission.log</p>
+<pre><code>{
+  "v": 1,
+  "datetime": "2025-09-05T12:12:35Z",
+  "permission": "env",
+  "value": "FOO"
+}
+{
+  "v": 1,
+  "datetime": "2025-09-05T12:14:18Z",
+  "permission": "read",
+  "value": "data.csv"
+}
+{
+  "v": 1,
+  "datetime": "2025-09-05T12:14:26Z",
+  "permission": "write",
+  "value": "log.txt"
+}
+</code></pre>
+<p>This can be combined with the env var <a href="https://docs.deno.com/runtime/fundamentals/security/#permissions"><code>DENO_TRACE_PERMISSIONS=1</code></a>, which will also add the stack trace for permission requests to the audit log.</p>
+<p>For more information, please visit <a href="https://docs.deno.com/runtime/fundamentals/security/#permissions">our documentation</a>.</p>
+<h2 id="deno-run-lists-all-tasks-and-scripts"><code>deno run</code> lists all tasks and scripts</h2>
+<p>Previously, <code>deno run</code> with no arguments printed an error, but in 2.5 it will output a list of available tasks from <code>deno.json</code> and scripts from <code>package.json</code>:</p>
+<pre><code>deno run
+Please specify a [SCRIPT_ARG] or a task name.
+
+Available tasks:
+- dev
+    deno run -A --env --watch=static/,routes/,data/ dev.ts
+- build
+    deno run -A dev.ts build
+- db:push (package.json)
+    dotenv drizzle-kit push
+- db:generate (package.json)
+    dotenv drizzle-kit generate
+</code></pre>
+<p>This will make it simpler to quickly see what tasks and scripts you can execute from the command line.</p>
+<h2 id="simpler-stdio-from-denochildprocess">Simpler stdio from <code>Deno.ChildProcess</code></h2>
+<p>We’ve added convenience methods to <code>stdout</code> and <code>stderr</code> streams in <code>Deno.ChildProcess</code>, making it easier to get various output types. For example:</p>
+<p>main.ts</p>
+<pre><code>const sub = new Deno.Command("cat", {
+  args: ["hello.txt"],
+  stdout: "piped",
+}).spawn();
+
+// 2.4 and before
+import { toText } from "jsr:@std/streams/to-text";
+const stdout = await toText(sub.stdout);
+
+// 2.5
+const stdout = await sub.stdout.text();
+</code></pre>
+<p>Convenience methods that are now available, match those on <a href="https://developer.mozilla.org/en-US/docs/Web/API/Response"><code>Response</code></a>:</p>
+<ul>
+<li><code>Deno.SubprocessReadableStream.arrayBuffer()</code> -> <code>ArrayBuffer</code></li>
+<li><code>Deno.SubprocessReadableStream.bytes()</code> -> <code>Uint8Array</code></li>
+<li><code>Deno.SubprocessReadableStream.json()</code> -> <code>unknown</code></li>
+<li><code>Deno.SubprocessReadableStream.text()</code> -> <code>string</code></li>
+</ul>
+<h2 id="more-consistent-behavior-for-formatting-options">More consistent behavior for formatting options</h2>
+<p>When the <code>spaceSurroundingProperties</code> option is set to false, <a href="https://docs.deno.com/runtime/reference/cli/fmt/"><code>deno fmt</code></a> will now also apply this to braces in named <code>import</code> and <code>export</code> statements:</p>
+<p>deno.json</p>
+<pre><code>{
+  "fmt": {
+    "spaceSurroundingProperties": false
+  }
+}
+</code></pre>
+<pre><code>// Old: Spaces preserved in `import` statement.
+import { foo } from "bar";
+
+const baz = {a: 1};
+
+// New: Spaces removed.
+import {foo} from "bar";
+
+const baz = {a: 1};
+</code></pre>
+<p>This behavior roughly matches <a href="https://eslint.style/rules/object-curly-spacing">that of stylistic’s curly rule</a>. Note that this option defaults to <code>true</code>, so users won’t be affected unless they have explicitly configured it to <code>false</code>.</p>
+<p>Thank you <a href="https://github.com/mologie">mologie</a> for this contribution!</p>
+<h2 id="dependency-management">Dependency management</h2>
+<p>In 2.5, we’ve introduced several changes to improve dependency management. Firstly, we have changed the <code>deno install</code> report format to make it more useful when managing dependencies:</p>
+<pre><code>$ deno install
+Installed 181 packages in 2093ms
+Reused 161 packages from cache
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++
+Downloaded 10 packages from JSR
+++++++++++
+Downloaded 86 packages from npm
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++
+
+Dependencies:
++ jsr:@deno/rust-automation 0.21.0
++ jsr:@denosaurs/emoji 0.3.1
++ jsr:@fresh/core 2.0.0-alpha.58
++ jsr:@fresh/plugin-tailwind 0.0.1-alpha.9
++ jsr:@std/data-structures 1.0.9
++ jsr:@std/front-matter 1.0.9
++ jsr:@std/internal 1.0.10
++ jsr:@std/testing 1.0.15
++ jsr:@std/toml 1.0.6
++ jsr:@std/yaml 1.0.9
++ npm:@algolia/client-search 4.14.3
++ npm:@algolia/requester-fetch 4.14.3
++ npm:@maxmind/geoip2-node 5.0.0
++ npm:@opentelemetry/api 1.9.0
++ npm:@preact/signals 2.2.1
+…
+</code></pre>
+<p>You now get a quick overview how many direct dependencies were installed, how many packages were pulled from a cache as well as how many JSR and npm packages were downloaded.</p>
+<p>We have also simplified the warning displayed if an npm package installed with <code>deno install</code> requires a build script:</p>
+<pre><code>╭ Warning
+│
+│  Ignored build scripts for packages:
+│  npm:sharp@0.34.3
+│
+╰─ Run "deno install --allow-scripts=npm:sharp@0.34.3" to run build scripts.
+</code></pre>
+<p><em>We will soon ship a tool that makes management of these build scripts more convenient, collaborative and secure.</em></p>
+<h3 id="no-unversioned-import-lint-rule"><code>no-unversioned-import</code> lint rule</h3>
+<p>The <a href="https://docs.deno.com/lint/rules/no-unversioned-import"><code>no-unversioned-import</code></a> rule requires that all <code>npm:</code> and <code>jsr:</code> import statements include a version number. This lint rule is enabled by default.</p>
+<p>While it’s convenient to write <code>import chalk from "npm:chalk"</code> for quick hacking, it’s not recommended in production, as Deno will automatically pull the latest version of the package. If the package published a breaking change, it could cause your code to fail.</p>
+<p>main.ts</p>
+<pre><code>import chalk from "npm:chalk";
+</code></pre>
+<pre><code>$ deno lint
+
+error[no-unversioned-import]: Missing version in specifier
+ --> /dev/main.ts:1:19
+  |
+1 | import chalk from "npm:chalk";
+  |                   ^^^^^^^^^^^
+  = hint: Add a version requirement after the package name
+
+  docs: https://docs.deno.com/lint/rules/no-unversioned-import
+</code></pre>
+<p><em>This rule is part of the <code>recommended</code> set and will be applied automatically if you haven’t configured <a href="https://docs.deno.com/runtime/reference/cli/lint/"><code>deno lint</code></a>.</em></p>
+<h3 id="no-import-prefix-lint-rule"><code>no-import-prefix</code> lint rule</h3>
+<p>The <a href="https://docs.deno.com/lint/rules/no-import-prefix"><code>no-import-prefix</code></a> rule ensures that all dependencies are declared in either <code>deno.json</code> or <code>package.json</code> rather than imported directly from URLs or package registries. This promotes better dependency management and makes it easier to track and update dependencies.</p>
+<p>deno.json</p>
+<pre><code>{
+  "imports": {
+    "oak": "jsr:@oak/oak@17"
+  }
+}
+</code></pre>
+<p>main.ts</p>
+<pre><code>import { Application } from "oak/application";
+import chalk from "npm:chalk";
+</code></pre>
+<pre><code>$ deno lint
+
+error[no-import-prefix]: Inline 'npm:', 'jsr:' or 'https:' dependency not allowed
+ --> /dev/main.ts:2:19
+  |
+2 | import chalk from "npm:chalk";
+  |                   ^^^^^^^^^^^
+  = hint: Add it as a dependency in a deno.json or package.json instead and reference it here via its bare specifier
+
+  docs: https://docs.deno.com/lint/rules/no-import-prefix
+</code></pre>
+<p><em>This rule is part of the new <code>workspace</code> set and will be applied automatically if there’s <code>deno.json</code> or <code>package.json</code> discovered.</em></p>
+<h2 id="nodejs-settimeout-and-setinterval-with---unstable-node-globals">Node.js <code>setTimeout</code> and <code>setInterval</code> with <code>--unstable-node-globals</code></h2>
+<p>This release brings back <code>--unstable-node-globals</code> flag that makes Deno use Node.js flavor of <code>setTimeout</code>, <code>setInterval</code>, <code>clearTimeout</code>, and <code>clearInterval</code> API.</p>
+<p>For context, Deno has always used Web version of these APIs. The change is subtle - the Web APIs return and accept numbers (timer ID), but Node.js APIs return and accept <code>Timer</code> object.</p>
+<p>Some npm libraries rely on <code>Timer.ref()</code> or <code>Timer.unref()</code> APIs that have equivalent <code>Deno.refTimer()</code> and <code>Deno.unrefTimer()</code>, but over the years we noticed that this situation leads to more confusion rather than simplification of developers’ lives.</p>
+<p>So starting with Deno v2.5 you can use <a href="https://docs.deno.com/runtime/reference/cli/unstable_flags/#--unstable-node-globals"><code>--unstable-node-globals</code></a> flag, or <a href="/blog/v2.4#deno_compat1"><code>DENO_COMPAT=1</code> env var</a> to tell Deno to prefer using Node.js timer APIs.</p>
+<p>We plan to change used APIs to be Node.js version in Deno 3. For most users there will be no changes required to adjust to the new APIs.</p>
+<h2 id="--watch-environment-variables-with---env-file"><code>--watch</code> environment variables with <code>--env-file</code></h2>
+<p>When using <a href="https://docs.deno.com/runtime/getting_started/command_line_interface/#watch-mode"><code>--watch</code></a> and <a href="https://docs.deno.com/runtime/reference/env_variables/#.env-file"><code>--env-file</code></a> flag, Deno will automatically reload environment variables when your environment file is updated.</p>
+<p>Thank you <a href="https://github.com/meetdhanani17">meetdhanani17</a> for this contribution!</p>
+<h2 id="set-tcp-backlog-size-to-denoserve">Set TCP backlog size to <code>Deno.serve</code></h2>
+<p><a href="https://docs.deno.com/runtime/fundamentals/http_server/"><code>Deno.serve</code></a> is a one-line, dead simple way to build an HTTP server. However, previously, there wasn’t an easy way to set the backlog size (the maximum number of pending TCP connections to queue for your listener), which is useful if you’re expecting huge bursts of traffic.</p>
+<p>In 2.5, we’ve added a new argument, <code>tcpBacklog</code>, letting you explicitly set the maximum number of queued incoming connections that can used with <code>Deno.listen{Tls}</code> and <code>Deno.serve</code>:</p>
+<p>server.ts</p>
+<pre><code>Deno.serve({
+  port: 4600,
+  tcpBacklog: 4096,
+}, (_req) => new Response("hello"));
+</code></pre>
+<p>The default TCP backlog has been increased to 511, which is a default used by many high performance servers.</p>
+<h2 id="tsconfig-compatibility-for-frameworks">TSConfig compatibility for frameworks</h2>
+<p>Deno 2.4 <a href="/blog/v2.4#better-tsconfigjson-support">expanded its <code>tsconfig.json</code> compatibility</a> with a focus on allowing Vite-configured projects to type-check with <code>deno check</code> out-of-the-box. Previously, these would have required a well-versed user to convert the configuration so the Deno CLI and <a href="https://docs.deno.com/runtime/reference/lsp_integration/">LSP</a> would work.</p>
+<p>Deno 2.5 adds support for <a href="https://github.com/denoland/deno/pull/30495"><code>compilerOptions.rootDirs</code></a> and the <a href="https://github.com/denoland/deno/pull/30603"><code>"bundler"</code></a> option for <code>compilerOptions.moduleResolution</code>, fixing type-checking for the following project templates:</p>
+<ul>
+<li><strong>SvelteKit</strong>: <a href="https://svelte.dev/docs/cli/sv-create"><code>npx sv create</code></a></li>
+<li><strong>Next.js</strong>: <a href="https://nextjs.org/docs/app/api-reference/cli/create-next-app"><code>npx create-next-app</code></a></li>
+</ul>
+<p>You can try these out by creating a basic application from one of these commands as you would with Node.js, adding a <code>deno.json</code> file with content <code>{}</code> to enable the LSP and running the <code>deno check</code> command. Ensure the Deno extension is installed.</p>
+<p>We aim for comprehensive TypeScript/<code>tsconfig.json</code> compatibility with modern Node.js projects. Please continue reporting any discovered incompatibility using our <a href="https://github.com/denoland/deno/issues">issue tracker</a>!</p>
+<h2 id="performance-improvements">Performance improvements</h2>
+<p><strong>Emit cache optimization</strong>: Deno now only clears its emit cache when the underlying <code>deno_ast</code> version changes, rather than on every update, significantly reducing unnecessary recompilation overhead.</p>
+<p><strong>CommonJS wrapper efficiency</strong>: Memory usage and heap allocations have been reduced when creating CommonJS wrapper modules, making Node.js compatibility more efficient.</p>
+<p><strong>Conditional JSX transpilation</strong>: JSX transpilation is now skipped entirely when JSX is disabled, avoiding unnecessary processing overhead for projects that don’t use JSX.</p>
+<p><strong>Improved <code>structuredClone</code></strong>: The <code>structuredClone</code> API now uses more efficient internal implementations, speeding up object cloning operations.</p>
+<p><strong><code>Buffer</code> method optimizations</strong>: The <code>Buffer.subarray</code> and <code>Buffer.prototype.utf8Slice</code> methods have been optimized for better performance when working with binary data.</p>
+<p><strong>Node-API optimizations</strong>: Various Node.js API compatibility layer optimizations reduce overhead when using native Node.js modules.</p>
+<h2 id="other-features">Other features</h2>
+<p><strong>Disable hostname verification in TLS connections</strong>: For development and testing scenarios, you can now disable hostname verification in TLS connections, providing more flexibility when working with self-signed certificates or non-standard certificate configurations. (<a href="https://github.com/denoland/deno/pull/30409">#30409</a>)</p>
+<p><strong>Unix socket and vsock proxy support via environment variable</strong>: You can now enable parsing Unix socket and vsock proxies for the <code>fetch</code> API with environment variables. (<a href="https://github.com/denoland/deno/pull/30377">#30377</a>)</p>
+<p><strong>Pull-based diagnostics in LSP</strong>: The Language Server Protocol implementation now uses pull-based diagnostics, improving performance and responsiveness when working with large codebases in your editor. (<a href="https://github.com/denoland/deno/pull/30325">#30325</a>)</p>
+<p><strong>Enhanced Node.js async hooks</strong>: Improved Node.js compatibility with async hooks implementation for <code>nextTick</code> TickObject tracking, making it easier to migrate existing Node.js applications that rely on this functionality. (<a href="https://github.com/denoland/deno/pull/30578">#30578</a>)</p>
+<p><strong>Bundle dependencies support</strong>: npm packages that use <code>bundleDependencies</code> in their <code>package.json</code> are now fully supported, expanding compatibility with the broader npm ecosystem. (<a href="https://github.com/denoland/deno/pull/30521">#30521</a>)</p>
+<p><strong>Vsock transport for telemetry</strong>: OpenTelemetry now supports vsock transport, enabling telemetry data collection in specialized virtualized environments and improving observability options. (<a href="https://github.com/denoland/deno/pull/30001">#30001</a>)</p>
+<h2 id="v8-140-and-typescript-592">V8 14.0 and TypeScript 5.9.2</h2>
+<p>Deno 2.5 upgrades to V8 14.0 and <a href="https://devblogs.microsoft.com/typescript/announcing-typescript-5-9/">TypeScript 5.9.2</a> bringing new language features and performance improvements.</p>
+<p>This release includes a big overhaul of <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal">the <code>Temporal</code> API</a>. As the implementation of this API matures across JavaScript engines, our hopes are that we can soon remove <code>--unstable-temporal</code> flag.</p>
+<h2 id="acknowledgments">Acknowledgments</h2>
+<p>We couldn’t build Deno without the help of our community! Whether by answering questions in our community <a href="https://discord.gg/deno">Discord server</a> or <a href="https://github.com/denoland/deno/issues">reporting bugs</a>, we are incredibly grateful for your support. In particular, we’d like to thank the following people for their contributions to Deno 2.5: 林炳权, Alex Yang, Asher Gomez, cions, ctrl+d, Daniel Osvaldo Rahmanto, EdamAmex, Edilson Pateguana, Garret Thompson, gerald, James Bronder, João Victor Lopes, Kendell R, Kenta Moriuchi, Kingsword, Krhougs, Kumbham Ajay Goud, Laurence Rowe, Lucas Vieira, Luke Swithenbank, Meet Dhanani, Oliver Kuckertz, Ruyut, sgasho, and ud2.</p>
+<p>Would you like to join the ranks of Deno contributors? <a href="https://docs.deno.com/runtime/manual/references/contributing">Check out our contribution docs here</a>, and we’ll see you on the list next time.</p>
+<p>Believe it or not, the changes listed above still don’t tell you everything that got better in 2.5. You can view the <a href="https://github.com/denoland/deno/releases/tag/v2.5.0">full list of pull requests merged in Deno 2.5 on GitHub</a>.</p>
+<p>Thank you for catching up with our 2.5 release, and we hope you love building with Deno!</p>
+<blockquote>
+<p><strong>🚨️ <a href="/deploy">There have been major updates to Deno Deploy!</a> 🚨️</strong></p>
+<ul>
+<li><a href="https://docs.deno.com/deploy/early-access/reference/databases/">Database connections and data explorer right in the UI</a></li>
+<li><a href="https://docs.deno.com/deploy/early-access/reference/cloud-connections/">Connect to AWS and GCP via Cloud Connections</a></li>
+<li><a href="https://docs.deno.com/deploy/early-access/reference/observability/">Automatic and immediate observability and telemetry</a></li>
+</ul>
+<p>and <a href="https://docs.deno.com/deploy/early-access/changelog/">much more!</a></p>
+<p><a href="/deploy">Get early access today.</a></p>
+</blockquote>
+<div class="metadata"><div><div>Title</div><div>Deno 2.5: Permissions in the config file | Deno</div></div><div><div>Description</div><div>Simpler permission management with permission sets, new Deno.test APIs for setting up and tearing down test cases, specifying custom headers in WebSocket connections, runtime APIs in deno bundle, and more.</div></div><div><div>Image</div><div><img src="http://localhost:3001/blog/v2.5/og.webp" alt="Deno 2.5: Permissions in the config file | Deno"></div></div><div><div>Date</div><div>September 10, 2025</div></div><div><div>Author</div><div>Bartek Iwańczuk, Andy Jiang</div></div><div><div>Tags</div><div>Product Update</div></div></div></div></main></body>

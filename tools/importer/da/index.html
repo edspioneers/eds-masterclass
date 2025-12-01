@@ -1,0 +1,303 @@
+<body><main><div><h1 id="uncomplicate-javascript">Uncomplicate JavaScript</h1>
+<p>Deno is the open-source JavaScript runtime for the modern web.</p>
+<p><a href="https://docs.deno.com/">Docs</a></p>
+<p><a href="https://github.com/denoland/deno/">GitHub</a></p>
+<p><img src="http://localhost:3001/images/homepage/lofi-hero-bg.webp?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<p><img src="http://localhost:3001/images/homepage/lofi-hero-clouds.webp?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""><img src="http://localhost:3001/images/homepage/lofi-hero-clouds.webp?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<p><img src="http://localhost:3001/images/homepage/lofi-hero-fg.webp?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""><img src="http://localhost:3001/images/homepage/lofi-placeholder-rain.webp?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt="An illustration in the style of lo-fi anime showing a cute dinosaur coding on a laptop in a cozy room. The laptop has a Deno sticker on the lid, and there&#x27;s a steamy mug of coffee beside it. In the background is a plant, on the sill of a window overlooking hills and trees. It&#x27;s dusk outside, with some stars visible in the upper skies, and it is raining gently as clouds slowly float past. The interior is warmly lit by a single desk lamp. On the desk is a takeout box, with chopsticks and a lemon beside it. Peeking over the edge of the box, barely visible, is DeeDee, the Deno Deploy mascot. Ferris, the Rust mascot, can also just barely be seen peeking out from inside the plant pot."></p>
+<h2 id="install-deno-256">Install Deno 2.5.6</h2>
+<p><a href="https://github.com/denoland/deno/blob/main/Releases.md">Release notes</a></p>
+<p>MacOS/Linux(Currently selected)</p>
+<p>Windows</p>
+<pre><code>curl -fsSL https://deno.land/install.sh | sh
+Copy command
+</code></pre>
+<p><img src="http://localhost:3001/images/homepage/peeking.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<h2 id="deno-is-the-open-source-javascript-runtime-for-the-modern-web">Deno is the open-source JavaScript runtime for the modern web.</h2>
+<p>Built on web standards with zero-config TypeScript, unmatched security, and a complete built-in toolchain.</p>
+<ul>
+<li>
+<p>Rating</p>
+<p>100k+</p>
+<p>Stars on GitHub</p>
+</li>
+<li>
+<p>Community</p>
+<p>400k+</p>
+<p>Active Deno users</p>
+</li>
+<li>
+<p>Ecosystem</p>
+<p>2M+</p>
+<p>Community modules</p>
+</li>
+</ul>
+<ul>
+<li><a href="https://slack.com"><img src="http://localhost:3001/images/lp/companies/slack.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt="Slack"></a></li>
+<li><a href="https://netlify.com"><img src="http://localhost:3001/images/lp/companies/netlify.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt="Netlify"></a></li>
+<li><a href="https://github.com"><img src="http://localhost:3001/images/lp/companies/github.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt="GitHub"></a></li>
+<li><a href="https://supabase.com"><img src="http://localhost:3001/images/lp/companies/supabase.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt="Supabase"></a></li>
+<li><a href="https://salesforce.com"><img src="http://localhost:3001/images/lp/companies/salesforce.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt="Salesforce"></a></li>
+<li><a href="https://open.spotify.com/"><img src="http://localhost:3001/images/lp/companies/spotify.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt="Spotify"></a></li>
+<li><a href="https://stripe.com"><img src="http://localhost:3001/images/lp/companies/stripe.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt="Stripe"></a></li>
+<li><a href="https://www.bankofamerica.com/"><img src="http://localhost:3001/images/lp/companies/bank-of-america.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt="Bank of America"></a></li>
+<li><a href="https://tencent.com"><img src="http://localhost:3001/images/lp/companies/tencent.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt="Tencent"></a></li>
+</ul>
+<p><img src="http://localhost:3001/images/homepage/side-peek.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<h3 id="enterprise-grade-javascript">Enterprise-grade JavaScript</h3>
+<p>Now offering enterprise support for the Deno runtime</p>
+<p><a href="/enterprise">Learn more</a></p>
+<h2 id="all-your-favorite-tools-built-in-and-ready-to-go">All your favorite tools, built-in and ready to go</h2>
+<p>Deno natively supports TypeScript, JSX, and modern ECMAScript features with zero configuration.</p>
+<p><img src="http://localhost:3001/images/icons/window-buttons.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<p>account.ts</p>
+<pre><code>type User = { name: string; balance: number };
+
+function getBalance(user: User): string {
+  return `Balance: $${user.balance.toFixed(2)}`;
+}
+
+console.log(getBalance({ name: "Alice", balance: 42 }));
+</code></pre>
+<p><img src="http://localhost:3001/images/icons/window-buttons.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<pre><code>$ deno run account.ts
+Balance: $42.00
+
+
+$ deno check
+Check account.ts
+✅ Type check successful
+</code></pre>
+<h3 id="just-run">Just run</h3>
+<p><img src="http://localhost:3001/runtime/typescript.png?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt="TypeScript"></p>
+<p>Run <code>.ts</code> files directly with built-in type checking and compilation—no additional tooling or configuration required!</p>
+<p><a href="https://docs.deno.com/runtime/fundamentals/typescript/">More about TypeScript in Deno</a></p>
+<h3 id="seamless">Seamless</h3>
+<p>With first-class support for npm and Node, Deno can read your <code>package.json</code> automatically, or you can import packages from npm directly.</p>
+<p><a href="https://docs.deno.com/runtime/manual/node">Node and npm support</a></p>
+<p><img src="http://localhost:3001/images/icons/window-buttons.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<p>Using package.json or import maps</p>
+<pre><code>import { Hono } from "hono";
+
+const app = new Hono();
+
+app.get("/", (c) => {
+  return c.text("Hello Hono!");
+});
+
+Deno.serve(app.fetch);
+</code></pre>
+<p><img src="http://localhost:3001/images/icons/window-buttons.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<p>Using inline imports</p>
+<pre><code>import { Hono } from "npm:hono@4";
+
+const app = new Hono();
+
+app.get("/", (c) => {
+  return c.text("Hello Hono!");
+});
+
+Deno.serve(app.fetch);
+</code></pre>
+<h2 id="built-on-web-standards">Built on web standards</h2>
+<p>Whenever possible, Deno implements web standard APIs on the server. Deno actively participates in <a href="https://tc39.es/">TC39</a> and <a href="https://wintercg.org/">WinterCG</a> to help move the web forward.</p>
+<h3 id="consistent-code-from-browser-to-backend">Consistent code from browser to backend</h3>
+<p>Deno prioritizes web standard APIs, maximizing code reuse between browser and server and future-proofing your code.</p>
+<p><a href="https://docs.deno.com/runtime/manual/runtime/web_platform_apis/">Web APIs in Deno</a></p>
+<p><img src="http://localhost:3001/images/homepage/peek-around.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<p><a href="#batteries-included">Skip past APIs list</a><a href="https://developer.mozilla.org/docs/Web/API/Worker">Worker</a><a href="https://developer.mozilla.org/docs/Web/API/MessageEvent">MessageEvent</a><a href="https://developer.mozilla.org/docs/Web/API/WritableStreamDefaultController">WritableStreamDefaultController</a><a href="https://developer.mozilla.org/docs/Web/API/structuredClone">structuredClone</a><a href="https://developer.mozilla.org/docs/Web/API/DecompressionStream">DecompressionStream</a><a href="https://developer.mozilla.org/docs/Web/API/CompressionStream">CompressionStream</a><a href="https://developer.mozilla.org/docs/Web/API/setInterval">setInterval</a><a href="https://developer.mozilla.org/docs/Web/API/PromiseRejectionEvent">PromiseRejectionEvent</a><a href="https://developer.mozilla.org/docs/Web/API/clearInterval">clearInterval</a><a href="https://developer.mozilla.org/docs/Web/API/Blob">Blob</a><a href="https://developer.mozilla.org/docs/Web/API/fetch">fetch</a><a href="https://developer.mozilla.org/docs/Web/API/btoa">btoa</a><a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">localStorage</a><a href="https://developer.mozilla.org/docs/Web/API/Navigator">Navigator</a><a href="https://developer.mozilla.org/docs/Web/API/clearTimeout">clearTimeout</a><a href="https://developer.mozilla.org/docs/Web/API/ReadableStreamDefaultController">ReadableStreamDefaultController</a><a href="https://developer.mozilla.org/en-US/docs/Web/API/Response/json">Response.json()</a><a href="https://developer.mozilla.org/docs/Web/API/EventTarget">EventTarget</a><a href="https://developer.mozilla.org/docs/Web/API/caches">caches</a><a href="https://developer.mozilla.org/docs/Web/API/CacheStorage">CacheStorage</a><a href="https://developer.mozilla.org/docs/Web/API/MessagePort">MessagePort</a><a href="https://developer.mozilla.org/docs/Web/API/Location">Location</a><a href="https://developer.mozilla.org/docs/Web/API/DedicatedWorkerGlobalScope">DedicatedWorkerGlobalScope</a><a href="https://developer.mozilla.org/docs/Web/API/WebSocket">WebSocket</a><a href="https://developer.mozilla.org/docs/Web/API/queueMicrotask">queueMicrotask</a><a href="https://developer.mozilla.org/docs/Web/API/CryptoKey">CryptoKey</a><a href="https://developer.mozilla.org/docs/Web/API/ErrorEvent">ErrorEvent</a><a href="https://developer.mozilla.org/docs/Web/API/PerformanceMark">PerformanceMark</a><a href="https://developer.mozilla.org/docs/Web/API/WorkerNavigator">WorkerNavigator</a><a href="https://developer.mozilla.org/docs/Web/API/ReadableStreamBYOBRequest">ReadableStreamBYOBRequest</a><a href="https://developer.mozilla.org/docs/Web/API/TextDecoder">TextDecoder</a><a href="https://developer.mozilla.org/docs/Web/API/WorkerLocation">WorkerLocation</a><a href="https://developer.mozilla.org/docs/Web/API/TextEncoderStream">TextEncoderStream</a><a href="https://developer.mozilla.org/docs/Web/API/ReadableByteStreamController">ReadableByteStreamController</a><a href="https://developer.mozilla.org/docs/Web/API/TransformStream">TransformStream</a><a href="https://developer.mozilla.org/docs/Web/API/File">File</a><a href="https://developer.mozilla.org/docs/Web/API/CustomEvent">CustomEvent</a><a href="https://developer.mozilla.org/docs/Web/API/Event">Event</a><a href="https://developer.mozilla.org/docs/Web/API/performance_property">performance</a><a href="https://developer.mozilla.org/docs/Web/API/DOMException">DOMException</a><a href="https://developer.mozilla.org/docs/Web/API/ReadableStreamBYOBReader">ReadableStreamBYOBReader</a><a href="https://developer.mozilla.org/docs/Web/API/crypto_property">crypto</a><a href="https://developer.mozilla.org/docs/Web/API/CloseEvent">CloseEvent</a><a href="https://developer.mozilla.org/docs/Web/API/URLPattern">URLPattern</a><a href="https://developer.mozilla.org/docs/Web/API/PerformanceEntry">PerformanceEntry</a><a href="https://developer.mozilla.org/docs/Web/API/console">console</a><a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/close">globalThis.close()</a><a href="https://developer.mozilla.org/docs/Web/API/Crypto">Crypto</a><a href="https://developer.mozilla.org/docs/Web/API/Request">Request</a><a href="https://developer.mozilla.org/docs/Web/API/ReadableStream">ReadableStream</a><a href="https://developer.mozilla.org/docs/Web/API/Storage">Storage</a><a href="https://developer.mozilla.org/en-US/docs/WebAssembly">WebAssembly</a><a href="https://developer.mozilla.org/docs/Web/API/TextDecoderStream">TextDecoderStream</a><a href="https://developer.mozilla.org/docs/Web/API/URLSearchParams">URLSearchParams</a><a href="https://developer.mozilla.org/docs/Web/API/ProgressEvent">ProgressEvent</a><a href="https://developer.mozilla.org/docs/Web/API/FileReader">FileReader</a><a href="https://developer.mozilla.org/docs/Web/API/ByteLengthQueuingStrategy">ByteLengthQueuingStrategy</a><a href="https://developer.mozilla.org/docs/Web/API/BeforeUnloadEvent">BeforeUnloadEvent</a><a href="https://developer.mozilla.org/docs/Web/API/TextEncoder">TextEncoder</a><a href="https://developer.mozilla.org/docs/Web/API/atob">atob</a><a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/alert">globalThis.alert()</a><a href="https://developer.mozilla.org/docs/Web/API/setTimeout">setTimeout</a><a href="https://developer.mozilla.org/docs/Web/API/Performance">Performance</a><a href="https://developer.mozilla.org/docs/Web/API/Headers">Headers</a><a href="https://developer.mozilla.org/docs/Web/API/WorkerGlobalScope">WorkerGlobalScope</a><a href="https://developer.mozilla.org/docs/Web/API/AbortSignal">AbortSignal</a><a href="https://developer.mozilla.org/docs/Web/API/FormData">FormData</a><a href="https://developer.mozilla.org/docs/Web/API/Response">Response</a><a href="https://developer.mozilla.org/docs/Web/API/MessageChannel">MessageChannel</a><a href="https://developer.mozilla.org/docs/Web/API/URL">URL</a><a href="https://developer.mozilla.org/docs/Web/API/BroadcastChannel">BroadcastChannel</a><a href="https://developer.mozilla.org/docs/Web/API/TransformStreamDefaultController">TransformStreamDefaultController</a><a href="https://developer.mozilla.org/docs/Web/API/SubtleCrypto">SubtleCrypto</a><a href="https://developer.mozilla.org/docs/Web/API/Cache">Cache</a><a href="https://developer.mozilla.org/docs/Web/API/WritableStream">WritableStream</a><a href="https://developer.mozilla.org/docs/Web/API/AbortController">AbortController</a><a href="https://developer.mozilla.org/docs/Web/API/ReadableStreamDefaultReader">ReadableStreamDefaultReader</a><a href="https://developer.mozilla.org/docs/Web/API/PerformanceMeasure">PerformanceMeasure</a><a href="https://developer.mozilla.org/docs/Web/API/WritableStreamDefaultWriter">WritableStreamDefaultWriter</a></p>
+<h2 id="batteries-included">Batteries included</h2>
+<p>The essential tools you need to build, test, and deploy your applications are all included out of the box.</p>
+<h3 id="code-linter">Code linter</h3>
+<p>Deno ships with a built-in code linter to help you avoid bugs and code rot.</p>
+<p><a href="https://docs.deno.com/runtime/manual/tools/linter">Learn more ›</a></p>
+<pre><code>$ deno lint --watch
+</code></pre>
+<p><img src="http://localhost:3001/images/homepage/code_lines.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<h3 id="test-runner">Test runner</h3>
+<p>Deno provides a test runner and assertion libraries as a part of the runtime and standard library.</p>
+<p><a href="https://docs.deno.com/runtime/manual/basics/testing/">Learn more ›</a></p>
+<pre><code>// server_test.ts
+Deno.test("1 + 2 = 3", () => {
+  const x = 1 + 2;
+  console.assert(x == 3);
+});
+</code></pre>
+<pre><code>$ deno test server_test.ts
+</code></pre>
+<h3 id="standalone-executables">Standalone executables</h3>
+<p>Instantly create standalone executables from your Deno program. It even supports cross-compiling for other platforms!</p>
+<p><a href="https://docs.deno.com/runtime/manual/tools/compiler">Learn more ›</a></p>
+<pre><code>Deno.serve(req => new Response("Hello!"));
+</code></pre>
+<pre><code>$ deno compile --allow-net server.ts
+
+Compile file:///tmp/server.ts to server
+$ ./server
+Listening on http://localhost:8000/
+</code></pre>
+<h3 id="code-formatter">Code formatter</h3>
+<p>Deno's built-in code formatter (based on dprint) beautifies JavaScript, TypeScript, JSON, and Markdown.</p>
+<p><a href="https://docs.deno.com/runtime/manual/tools/formatter">Learn more ›</a></p>
+<pre><code>$ deno fmt --line-width=120
+</code></pre>
+<p><img src="http://localhost:3001/images/homepage/formatter_lines.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<h2 id="secure-by-default">Secure by default</h2>
+<p>A program run with Deno has no file, network, or environment access unless explicitly enabled.</p>
+<h3 id="prevent-supply-chain-attacks">Prevent supply chain attacks</h3>
+<p>Stop worrying about npm modules introducing unexpected vulnerabilities. Deno restricts access to the file system, network, and system environment by default, so code can access only what you allow.</p>
+<p><a href="https://docs.deno.com/runtime/manual/basics/permissions">Security in Deno</a></p>
+<h4 id="other-runtimes">Other runtimes</h4>
+<pre><code>$ node random.js
+Executing random.js...
+🚨 File system compromised!
+</code></pre>
+<h4 id="deno">Deno</h4>
+<pre><code>$ deno random.js
+⚠️ Deno requests write access
+Allow? [y/n/A]
+$ n
+❌ Denied write access
+Exited
+</code></pre>
+<h3 id="high-performance-networking">High-performance networking</h3>
+<p>Out of the box support for:</p>
+<ul>
+<li>HTTPS (encryption)</li>
+<li>WebSocket</li>
+<li>HTTP2</li>
+<li>Automatic response body compression</li>
+</ul>
+<p><a href="https://docs.deno.com/runtime/manual/runtime/http_server_apis/">View documentation</a></p>
+<h4 id="requests-per-second">Requests per second*</h4>
+<p>More is better</p>
+<p>Deno</p>
+<p>0</p>
+<p>Node</p>
+<p>0</p>
+<p>* Ubuntu 22 on ec2 m5.metal; Deno 2.5.2 vs. Node 18.12.1</p>
+<h2 id="built-for-the-cloud">Built for the cloud</h2>
+<p>Whether you deploy with our lightning-fast Deno Deploy or on other cloud providers, Deno streamlines your experience.</p>
+<h3 id="-deno-runs-on-">— Deno runs on —</h3>
+<ul>
+<li><a href="https://hub.docker.com/r/denoland/deno" title="Docker">Official Docker image</a></li>
+<li><a href="https://github.com/hayd/deno-lambda" title="AWS Lambda distribution">hayd/deno-lambda</a></li>
+<li><a href="https://docs.deno.com/runtime/manual/advanced/deploying_deno/digital_ocean" title="DigitalOcean">How to Deploy Deno to Digital Ocean</a></li>
+<li><a href="https://fly.io/docs/languages-and-frameworks/deno/" title="Fly.io">Run a Deno App - Fly.io Docs</a></li>
+<li><a href="https://github.com/skymethod/denoflare" title="Cloudflare">skymethod/denoflare</a></li>
+<li><a href="https://github.com/anthonychu/azure-functions-deno-worker" title="Azure">anthonychu/azure-functions-deno-worker</a></li>
+<li><a href="https://docs.deno.com/runtime/manual/advanced/deploying_deno/google_cloud_run" title="Google Cloud Run">How to Deploy to Google Cloud Run</a></li>
+</ul>
+<h2 id="-the-cloud-built-for-modern-javascript-">— The cloud built for modern JavaScript —</h2>
+<h3 id="project-hosting-made-for-deno">Project hosting made for Deno</h3>
+<p>Unlock the full potential of your JavaScript and TypeScript projects with the all-new, completely reimagined Deno Deploy</p>
+<p><a href="/video/playground-1-720.mp4?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4"><img src="/video/thumbnails/playground-1-720.jpg" alt=""></a></p>
+<h3 id="unlock-the-full-power-of-deno">Unlock the full power of Deno</h3>
+<p>Deno users can enjoy first-class support for features like OpenTelemetry, Deno KV, and the Deno Deploy CLI—plus exclusives like Playgrounds, Databases, and more.</p>
+<h3 id="built-for-anything-built-with-javascript">Built for anything built with JavaScript</h3>
+<p>Because Deno is compatible with Node, your teams and projects can enjoy Deno Deploy's powerful features—even if you're not using Deno</p>
+<ul>
+<li><a href="https://fresh.deno.dev/" title="Fresh">Fresh logo</a></li>
+<li><a href="https://vuejs.org/" title="Vue">Vue logo</a></li>
+<li><a href="https://hono.dev/" title="Hono">Hono logo</a></li>
+<li><a href="https://nextjs.org/" title="Next">Next logo</a></li>
+</ul>
+<ul>
+<li><a href="https://start.solidjs.com/" title="Solid Start">Solid Start logo</a></li>
+<li><a href="https://nuxt.com/" title="Nuxt">Nuxt logo</a></li>
+<li><a href="https://kit.svelte.dev/" title="SvelteKit">SvelteKit logo</a></li>
+<li><a href="https://docusaurus.io/" title="Docusaurus">Docusaurus logo</a></li>
+</ul>
+<ul>
+<li><a href="https://reactjs.org/" title="React">React logo</a></li>
+<li><a href="https://astro.build/" title="Astro">Astro logo</a></li>
+<li><a href="https://www.solidjs.com/" title="Solid">Solid logo</a></li>
+<li><a href="https://remix.run/" title="Remix">Remix logo</a></li>
+</ul>
+<ul>
+<li><a href="https://vite.dev/" title="Vite">Vite logo</a></li>
+<li><a href="https://expressjs.com/" title="Express">Express logo</a></li>
+<li><a href="/" title="Deno">Deno logo</a></li>
+<li><a href="https://nodejs.org/" title="Node">Node logo</a></li>
+</ul>
+<p><a href="/deploy">Learn more about Deno Deploy</a></p>
+<p><a href="/pricing">Pricing</a><a href="https://console.deno.com">Sign in</a></p>
+<p><img src="http://localhost:3001/runtime/fresh.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<h2 id="get-the-most-out-of-deno-with-fresh-20">Get the most out of Deno with Fresh 2.0</h2>
+<p><a href="https://fresh.deno.dev">Fresh</a> is the Deno web framework, built with <a href="https://preactjs.com/">Preact</a> and fully compatible with <a href="https://vitejs.dev/">Vite</a> for blazing speed and instant productivity.</p>
+<h3 id="build-fast-sites-fast">Build fast sites fast</h3>
+<p>Author routes as the JSX (or TSX) components you already know and love, and Fresh handles dynamic server-side rendering by default.</p>
+<p><img src="http://localhost:3001/images/icons/window-buttons.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<p>/routes/index.tsx</p>
+<pre><code>export default function HomePage() {
+  return (
+    &#x3C;div>
+      &#x3C;h1>HTML fresh from the server!&#x3C;/h1>
+      &#x3C;p>
+        Delivered at
+        {new Date().toLocaleTimeString()}
+      &#x3C;/p>
+    &#x3C;/div>
+  );
+}
+</code></pre>
+<p><img src="http://localhost:3001/images/icons/window-buttons.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<p>/islands/Counter.tsx</p>
+<pre><code>import { useSignal } from "@preact/signals";
+
+export default function Counter() {
+  const count = useSignal&#x3C;number>(0);
+
+  return (
+    &#x3C;button onClick={() => count.value += 1}>
+      The count is {count.value}
+    &#x3C;/button>
+  );
+}
+</code></pre>
+<h3 id="ship-less-javascript">Ship less JavaScript</h3>
+<p>Island-based architecture lets you opt in to only the JavaScript you need, for absolutely minimal runtime overhead.</p>
+<p><a href="https://fresh.deno.dev/">Learn more about Fresh</a></p>
+<p>Our vibrant community</p>
+<blockquote>
+<p>“I knew this was gonna happen! Deno is truly building the fastest, most secure and personalizable JS runtime!”</p>
+</blockquote>
+<p>Manu (Qwik)</p>
+<blockquote>
+<p>“Deno's security model is PERFECT for this type of script. Running a script from a rando off the internet? It asks for read access to only the CWD and then asks for access to the file it wants to write to. 👏”</p>
+</blockquote>
+<p>Wes Bos</p>
+<blockquote>
+<p>“I really think Deno is the easiest and most capable JS runtime. URL imports are slept on.”</p>
+</blockquote>
+<p>Atalocke</p>
+<blockquote>
+<p>“npm packages in Deno 👀 That’s an exciting development for those of us building at the edge.”</p>
+</blockquote>
+<p>Jason Lengstorf</p>
+<blockquote>
+<p>“This Deno thing is fast, no doubt about it. #denoland”</p>
+</blockquote>
+<p>Poorly Funded Snob</p>
+<blockquote>
+<p>“Deno: I have to use the browser APIs cause they are everywhere, and everywhere is my target runtime (the web). The runtime that tries to mirror browser APIs server side makes my life easiest.”</p>
+</blockquote>
+<p>Taylor Young</p>
+<blockquote>
+<p>“Deno is fantastic. I am using it to level up a bit in terms of JavaScript and TypeScript and it is the easiest way to get going. Their tooling is like 100x simpler than all the usual Node stacks.”</p>
+</blockquote>
+<p>Stefan Arentz</p>
+<ul>
+<li>Manu (Qwik)(active)</li>
+<li>Wes Bos</li>
+<li>Atalocke</li>
+<li>Jason Lengstorf</li>
+<li>Poorly Funded Snob</li>
+<li>Taylor Young</li>
+<li>Stefan Arentz</li>
+</ul>
+<p><img src="http://localhost:3001/images/homepage/side-peek.svg?__frsh_c=0a3729d6bcaef11865d40ac9cc0bcd828a21dbd4" alt=""></p>
+<h2 id="ready-to-get-started-with-deno">Ready to get started with Deno?</h2>
+<p><a href="https://docs.deno.com/runtime/manual">Install now</a></p>
+<p><a href="https://docs.deno.com">Read the docs</a></p>
+<div class="metadata"><div><div>Title</div><div>Deno, the next-generation JavaScript runtime</div></div><div><div>Description</div><div>Deno features improved security, performance, and developer experience compared to its predecessor. It's a great time to upgrade your Node.js project to run on Deno.</div></div><div><div>Image</div><div><img src="http://localhost:3001/og/image.jpg" alt="A logo of a sauropod in the rain and the word Deno"></div></div></div></div></main></body>

@@ -2,14 +2,13 @@ version: 1
 indices:
   default:
     include:
-      - /**
+      - /blog/**
     exclude:
       - /drafts/**
       - /tools/sidekick/**
       - /fragments/**
       - /library/**
       - /modals/**
-      - /blogs/**
     target: /query-index.json
     properties:
       title:
